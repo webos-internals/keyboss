@@ -27,8 +27,10 @@ static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   event.code = code;
   event.value = value;
 
-  if (write(fd, &event, sizeof(event)) != sizeof(event))
+  if (write(fd, &event, sizeof(event)) != sizeof(event)) {
+    syslog(LOG_INFO, "write to fd %d failed\n", fd);
     return -1;
+  }
 
   return 0;
 }
@@ -113,6 +115,25 @@ bool is_valid_code(int code) {
   return (code >= KEY_ESC && code <KEY_UNKNOWN);
 }
 
+int set_repeat(__s32 delay, __s32 period) {
+  int fd;
+
+  /* FIXME: use sysfs to find the keypad device by name */ 
+  fd=open(KEYPAD_DEVICE, O_WRONLY); 
+  if (fd < 0) {
+    syslog(LOG_INFO, "Unable to open device %s in write mode\n", KEYPAD_DEVICE);
+    return -1;
+  }
+
+  if (delay >= 0)
+    send_event(fd, EV_REP, REP_DELAY, delay);
+
+  if (period >= 0)
+    send_event(fd, EV_REP, REP_PERIOD, period);
+
+  return 0;
+}
+
 int send_key(__u16 code, __s32 value) {
   send_event(u_fd, EV_KEY, code, value);
   send_event(u_fd, EV_SYN, SYN_REPORT, 0);
@@ -122,8 +143,9 @@ void cleanup(int sig) {
   /* Restart hidd to let it re-initialize with the changed 
    * /etc/input/keypad0 symlink */
   syslog(LOG_INFO, "caught sig %d", sig);
-  pthread_cancel(pipe_id);
+  set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
   restart_hidd();
+  pthread_cancel(pipe_id);
 }
 
 int main(int argc, char *argv[]) {
