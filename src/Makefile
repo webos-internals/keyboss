@@ -1,16 +1,18 @@
-INCLUDES=-I/source/webos-internals/lunaservice -I. -I${ROOT}${prefix}/include/glib-2.0 -I${ROOT}${prefix}/lib/glib-2.0/include -I${ROOT}${prefix}/include
-LDFLAGS=-L. -L${ROOT}${prefix}/glib-2.0 -L${ROOT}${prefix}/lib -L/source/webos-internals/lunaservice -Wl,--allow-shlib-undefined
-LIBS=-llunaservice -lglib-2.0 -lpthread -lmjson
+STAGING_DIR=${ROOT}
+
+VERSION = unknown
+CFLAGS := -g -DVERSION=\"${VERSION}\" \
+					-I${STAGING_DIR}/usr/include/glib-2.0 \
+					-I${STAGING_DIR}/usr/lib/glib-2.0/include \
+					-I${STAGING_DIR}/usr/include \
+					-I.
+LDFLAGS := -g -L${STAGING_DIR}/usr/lib -llunaservice -lmjson -lglib-2.0 -lpthread
 
 OBJECTS=keyboss.o luna_service.o luna_methods.o
 
 all: keyboss
 
-$(OBJECTS):
-	$(CC) -o $@ -c ${@:.o=.c} $(INCLUDES)
-
 keyboss: $(OBJECTS)
-	$(CC) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS)
 
 clobber:
 	rm -f keyboss $(OBJECTS)
