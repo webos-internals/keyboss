@@ -94,7 +94,7 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
 }
 
 SettingsAssistant.prototype.rateChange = function(event) {
-  Mojo.Log("value " + event.value);
+  Mojo.Log.error("value " + event.value);
   if (event.target === this.freqSlider)
     service.setRepeatRate(this.callback, -1, Math.floor(1000/event.value), false);
   else if (event.target === this.delaySlider)
