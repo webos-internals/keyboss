@@ -13,6 +13,8 @@
 static int u_fd = -1;
 static int k_fd = -1;
 static pthread_t pipe_id;
+int current_delay;
+int current_period;
 
 static void restart_hidd(void) {
   system("/sbin/stop hidd");
@@ -125,11 +127,15 @@ int set_repeat(__s32 delay, __s32 period) {
     return -1;
   }
 
-  if (delay >= 0)
-    send_event(fd, EV_REP, REP_DELAY, delay);
+  if (delay >= 0) {
+    if (!send_event(fd, EV_REP, REP_DELAY, delay))
+      current_delay = delay;
+  }
 
-  if (period >= 0)
-    send_event(fd, EV_REP, REP_PERIOD, period);
+  if (period >= 0) {
+    if (!send_event(fd, EV_REP, REP_PERIOD, period))
+      current_period = delay;
+  }
 
   return 0;
 }

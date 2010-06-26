@@ -1,7 +1,11 @@
+#include <stdio.h>
+#include <string.h>
 #include <stdbool.h>
 #include <syslog.h>
 #include "luna_service.h"
 #include "keyboss.h"
+
+char message_buf[1024];
 
 bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
@@ -21,6 +25,19 @@ bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   send_key(code, keydown);
   LSMessageRespond(message, "{\"returnValue: 0\"}", &lserror);
+
+  return true;
+}
+
+bool get_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+
+  memset(message_buf, 0, sizeof message_buf);
+  sprintf(message_buf, "{\"returnValue: 0\", \"delay\": %d, \"period\": %d}",
+      current_delay, current_period);
+
+  LSMessageRespond(message, message_buf, &lserror);
 
   return true;
 }
@@ -80,6 +97,7 @@ bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
 LSMethod luna_methods[] = { 
   {"emulateKey", emulate_key},
+  {"getRepeatRate", get_repeat_rate},
   {"setRepeatRate", set_repeat_rate},
   {"setKeyHold", set_key_hold},
   {"setKeyDouble", set_key_double},

@@ -10,7 +10,7 @@ SettingsAssistant.prototype.setup = function() {
 		
   this.sliderAttributes = {
     modelProperty: 'value',
-    maxValue: 3000,
+    maxValue: 1000,
     minValue: 0,
     round: false,
     updateInterval: 10
@@ -29,19 +29,30 @@ SettingsAssistant.prototype.setup = function() {
 	
 	/* setup widgets here */
 
-  this.controller.setupWidget('delaySlider', this.sliderAttributes, {'value': 500});
-  this.controller.setupWidget('periodSlider', this.sliderAttributes, {'value': 100});
+  this.delayModel = {value: 500};
+  this.freqModel = {value: 10};
+
+  this.controller.setupWidget('delaySlider', this.sliderAttributes, 
+      this.delayModel);
+  this.controller.setupWidget('freqSlider', this.sliderAttributes, 
+      this.freqModel);
   this.controller.setupWidget('preview', this.textAttributes, {});
   this.controller.setupWidget('defaultButton', {}, {buttonLabel: 'Reset'});
 	
-  this.periodSlider = this.controller.get('periodSlider');
+  this.freqSlider = this.controller.get('freqSlider');
   this.delaySlider = this.controller.get('delaySlider');
   this.defaultButton = this.controller.get('defaultButton');
+  this.preview = this.controller.get('preview');
 
 	/* add event handlers to listen to events from widgets */
   this.handleRateChange = this.rateChange.bindAsEventListener(this);
-  Mojo.Event.listen(this.delaySlider, 'mojo-property-change', this.handleRateChange);
-  Mojo.Event.listen(this.periodSlider, 'mojo-property-change', this.handleRateChange);
+  Mojo.Event.listen(this.delaySlider, 'mojo-property-change', 
+      this.handleRateChange);
+  Mojo.Event.listen(this.freqSlider, 'mojo-property-change', 
+      this.handleRateChange);
+  Mojo.Event.listen(this.defaultButton, Mojo.Event.tap, 
+      this.setRateDefault.bindAsEventListener(this));
+  this.controller.listen(this.controller.sceneElement, Mojo.Event.keydown, this.keyDown.bind(this));
 };
 
 SettingsAssistant.prototype.callback = function(payload) {
@@ -50,20 +61,35 @@ SettingsAssistant.prototype.callback = function(payload) {
   }
 }
 
+SettingsAssistant.prototype.handleGet = function(payload) {
+  for (p in payload) {
+    Mojo.Log.error(p + ": " + payload[p]);
+  }
+
+  this.delayModel.value = payload.delay;
+  this.freqModel.value = Math.floor(1000/payload.period);
+  this.controller.modelChanged(this.delayModel, this);
+  this.controller.modelChanged(this.freqModel, this);
+}
+
+SettingsAssistant.prototype.keyDown = function(event) {
+  this.preview.mojo.focus();
+}
+
+SettingsAssistant.prototype.setRateDefault = function(event) {
+  this.delayModel.value = 500
+  this.freqModel.value = 10;
+  this.controller.modelChanged(this.delayModel, this);
+  this.controller.modelChanged(this.freqModel, this);
+  service.setRepeatRate(this.callback, -1, -1, true);
+  service.getRepeatRate(this.handleGet.bind(this));
+}
+
 SettingsAssistant.prototype.rateChange = function(event) {
-  Mojo.Log.error("target " + event.target.id);
-  if (event.target === this.periodSlider) {
-    Mojo.Log.error("rate Change period");
-    service.setRepeatRate(this.callback, -1, Math.floor(event.value), false);
-  }
-  else if (event.target === this.delaySlider) {
-    Mojo.Log.error("rate Change delay");
+  if (event.target === this.freqSlider)
+    service.setRepeatRate(this.callback, -1, Math.floor(1000/event.value), false);
+  else if (event.target === this.delaySlider)
     service.setRepeatRate(this.callback, Math.floor(event.value), -1, false);
-  }
-  else if (event.target === this.defaultButton) {
-    Mojo.Log.error("rate Change default");
-    service.setRepeatRate(this.callback, -1, -1, true);
-  }
 }
 
 SettingsAssistant.prototype.activate = function(event) {

@@ -14,6 +14,8 @@
 #define DEFAULT_DELAY  (500)
 #define DEFAULT_PERIOD (100)
 
+int current_delay;
+int current_period;
 /* function declarations */
 bool is_valid_code(int code);
 int send_key(__u16 code, __s32 value);
