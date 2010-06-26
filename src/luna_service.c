@@ -40,9 +40,3 @@ void luna_service_start() {
 
   g_main_loop_run(loop);
 }
-
-void luna_service_cleanup() {
-  /* Restart hidd to let it re-initialize with the changed 
-   * /etc/input/keypad0 symlink */
-  restart_hidd();
-}

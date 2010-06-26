@@ -10,7 +10,16 @@
 #include "luna_service.h"
 #include "keyboss.h"
 
-int send_event(int fd, __u16 type, __u16 code, __s32 value) {
+static int u_fd = -1;
+static int k_fd = -1;
+static pthread_t pipe_id;
+
+static void restart_hidd(void) {
+  system("/sbin/stop hidd");
+  system("/sbin/start hidd");
+}
+
+static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   struct input_event event;
 
   memset(&event, 0, sizeof(event));
@@ -24,12 +33,7 @@ int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   return 0;
 }
 
-int send_key(__u16 code, __s32 value) {
-  send_event(u_fd, EV_KEY, code, value);
-  send_event(u_fd, EV_SYN, SYN_REPORT, 0);
-}
-
-void *pipe_keys(void *ptr) {
+static void *pipe_keys(void *ptr) {
   int i; 
   struct uinput_user_dev device; 
   struct input_event event;
@@ -104,12 +108,16 @@ err:
 
 }
 
-void restart_hidd(void) {
-  system("/sbin/stop hidd");
-  system("/sbin/start hidd");
+bool is_valid_code(int code) {
+  return (code >= KEY_ESC && code <KEY_UNKNOWN);
 }
 
-void cleanup(void) {
+int send_key(__u16 code, __s32 value) {
+  send_event(u_fd, EV_KEY, code, value);
+  send_event(u_fd, EV_SYN, SYN_REPORT, 0);
+}
+
+void cleanup(int sig) {
   /* Restart hidd to let it re-initialize with the changed 
    * /etc/input/keypad0 symlink */
   pthread_cancel(pipe_id);

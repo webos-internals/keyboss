@@ -12,5 +12,5 @@ $(OBJECTS):
 keyboss: $(OBJECTS)
 	$(CC) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBS)
 
-clean:
+clobber:
 	rm -f keyboss $(OBJECTS)

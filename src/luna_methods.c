@@ -1,49 +1,61 @@
 #include <stdbool.h>
 #include "luna_service.h"
+#include "keyboss.h"
 
 bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  int code;
+  bool keydown;
+  json_t *object;
   LSError lserror;
   LSErrorInit(&lserror);
+ 
+  object = LSMessageGetPayloadJSON(message);
+  json_get_int(object, "code", &code);
+  json_get_bool(object, "keydown", &keydown);
+  if (!is_valid_code(code)) {
+    LSMessageRespond(message, 
+        "\"returnValue: -1\", \"errorText\": \"Invalid key code\"}", &lserror);
+    return false;
+  }
 
-  LSMessageRespond(message, "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", 
-      &lserror);
+  send_key(code, keydown);
 }
 
-bool repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
+bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
-  LSMessageRespond(message, "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", 
-      &lserror);
+  LSMessageRespond(message, 
+    "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_key_hold(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
-  LSMessageRespond(message, "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", 
-      &lserror);
+  LSMessageRespond(message, 
+    "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
-  LSMessageRespond(message, "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", 
-      &lserror);
+  LSMessageRespond(message, 
+      "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
-  LSMessageRespond(message, "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", 
-      &lserror);
+  LSMessageRespond(message, 
+      "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 LSMethod luna_methods[] = { 
   {"emulateKey", emulate_key},
-  {"repeatRate", repeat_rate},
+  {"setRepeatRate", set_repeat_rate},
   {"setKeyHold", set_key_hold},
   {"setKeyDouble", set_key_double},
   {"setMode", set_mode},
