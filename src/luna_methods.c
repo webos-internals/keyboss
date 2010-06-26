@@ -19,12 +19,12 @@ bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
   json_get_bool(object, "keydown", &keydown);
   if (!is_valid_code(code)) {
     LSMessageRespond(message, 
-        "{\"returnValue: -1\", \"errorText\": \"Invalid key code\"}", &lserror);
+        "{\"returnValue\": -1, \"errorText\": \"Invalid key code\"}", &lserror);
     return false;
   }
 
   send_key(code, keydown);
-  LSMessageRespond(message, "{\"returnValue: 0\"}", &lserror);
+  LSMessageRespond(message, "{\"returnValue\": 0}", &lserror);
 
   return true;
 }
@@ -34,7 +34,7 @@ bool get_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue: 0\", \"delay\": %d, \"period\": %d}",
+  sprintf(message_buf, "{\"returnValue\": 0, \"delay\": %d, \"period\": %d}",
       current_delay, current_period);
 
   LSMessageRespond(message, message_buf, &lserror);
@@ -58,7 +58,7 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   syslog(LOG_INFO, "useDefault %d, delay %d, period %d\n", use_default, delay, period);
   if (!use_default && (delay < 0 || period < 0 || delay > 3000 || period > 3000)) {
     LSMessageRespond(message, 
-        "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+        "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
   }
 
   if (use_default)
@@ -66,7 +66,7 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   else 
     set_repeat(delay, period);
 
-  LSMessageRespond(message, "{\"returnValue: 0\"}", &lserror);
+  LSMessageRespond(message, "{\"returnValue\": 0}", &lserror);
 
   return true;
 }
@@ -76,7 +76,7 @@ bool set_key_hold(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
-    "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+    "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
@@ -84,7 +84,7 @@ bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
-      "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+      "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
@@ -92,7 +92,7 @@ bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
-      "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+      "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 LSMethod luna_methods[] = { 

@@ -8,13 +8,21 @@ function SettingsAssistant() {
 SettingsAssistant.prototype.setup = function() {
 	/* this function is for setup tasks that have to happen when the scene is first created */
 		
-  this.sliderAttributes = {
+  this.delayAttributes = {
     modelProperty: 'value',
     maxValue: 1000,
     minValue: 0,
     round: false,
     updateInterval: 10
   };
+
+  this.freqAttributes = {
+    modelProperty: 'value',
+    maxValue: 100,
+    minValue: 0,
+    round: false,
+    updateInterval: 1
+  }
 
   this.textAttributes = {
     multiline: false,
@@ -32,9 +40,9 @@ SettingsAssistant.prototype.setup = function() {
   this.delayModel = {value: 500};
   this.freqModel = {value: 10};
 
-  this.controller.setupWidget('delaySlider', this.sliderAttributes, 
+  this.controller.setupWidget('delaySlider', this.delayAttributes, 
       this.delayModel);
-  this.controller.setupWidget('freqSlider', this.sliderAttributes, 
+  this.controller.setupWidget('freqSlider', this.freqAttributes, 
       this.freqModel);
   this.controller.setupWidget('preview', this.textAttributes, {});
   this.controller.setupWidget('defaultButton', {}, {buttonLabel: 'Reset'});
@@ -86,6 +94,7 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
 }
 
 SettingsAssistant.prototype.rateChange = function(event) {
+  Mojo.Log("value " + event.value);
   if (event.target === this.freqSlider)
     service.setRepeatRate(this.callback, -1, Math.floor(1000/event.value), false);
   else if (event.target === this.delaySlider)
