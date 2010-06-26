@@ -134,7 +134,7 @@ int set_repeat(__s32 delay, __s32 period) {
 
   if (period >= 0) {
     if (!send_event(fd, EV_REP, REP_PERIOD, period))
-      current_period = delay;
+      current_period = period;
   }
 
   return 0;
