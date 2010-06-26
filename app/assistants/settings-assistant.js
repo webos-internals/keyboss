@@ -18,10 +18,10 @@ SettingsAssistant.prototype.setup = function() {
 
   this.freqAttributes = {
     modelProperty: 'value',
-    maxValue: 100,
+    maxValue: 90,
     minValue: 0,
     round: false,
-    updateInterval: 1
+    updateInterval: 5
   }
 
   this.textAttributes = {

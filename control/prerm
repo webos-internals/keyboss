@@ -16,10 +16,6 @@ APPS=/media/cryptofs/apps
 /sbin/stop ${PID} || true
 /usr/bin/killall -9 ${PID} || true
 
-# killall may stop signal catching from restarting hidd, do it now in case
-/sbin/stop hidd
-/sbin/start hidd
-
 # Remove the keyboss executable
 rm -f /var/usr/sbin/${PID}
 

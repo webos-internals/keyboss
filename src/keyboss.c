@@ -121,7 +121,7 @@ int set_repeat(__s32 delay, __s32 period) {
   int fd;
 
   /* FIXME: use sysfs to find the keypad device by name */ 
-  fd=open(KEYPAD_DEVICE, O_WRONLY); 
+  fd=open(KEYPAD_DEVICE, O_WRONLY | O_SYNC); 
   if (fd < 0) {
     syslog(LOG_INFO, "Unable to open device %s in write mode\n", KEYPAD_DEVICE);
     return -1;
@@ -146,12 +146,9 @@ int send_key(__u16 code, __s32 value) {
 }
 
 void cleanup(int sig) {
-  /* Restart hidd to let it re-initialize with the changed 
-   * /etc/input/keypad0 symlink */
-  syslog(LOG_INFO, "caught sig %d", sig);
-  set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
-  restart_hidd();
+  syslog(LOG_INFO, "cleanup (sig %d)", sig);
   pthread_cancel(pipe_id);
+  set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
 }
 
 int main(int argc, char *argv[]) {
