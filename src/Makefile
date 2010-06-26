@@ -1,6 +1,8 @@
-STAGING_DIR=${ROOT}
-
 VERSION = unknown
+
+STAGING_DIR=${ROOT}
+CC=arm-none-linux-gnueabi-gcc
+
 CFLAGS := -g -DVERSION=\"${VERSION}\" \
 					-I${STAGING_DIR}/usr/include/glib-2.0 \
 					-I${STAGING_DIR}/usr/lib/glib-2.0/include \
