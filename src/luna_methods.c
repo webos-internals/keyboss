@@ -1,24 +1,28 @@
 #include <stdbool.h>
+#include <syslog.h>
 #include "luna_service.h"
 #include "keyboss.h"
 
 bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
   int code;
-  bool keydown;
+  int keydown;
   json_t *object;
   LSError lserror;
   LSErrorInit(&lserror);
  
   object = LSMessageGetPayloadJSON(message);
   json_get_int(object, "code", &code);
-  json_get_bool(object, "keydown", &keydown);
+  json_get_int(object, "keydown", &keydown);
   if (!is_valid_code(code)) {
     LSMessageRespond(message, 
-        "\"returnValue: -1\", \"errorText\": \"Invalid key code\"}", &lserror);
+        "{\"returnValue: -1\", \"errorText\": \"Invalid key code\"}", &lserror);
     return false;
   }
 
   send_key(code, keydown);
+  LSMessageRespond(message, "{\"returnValue: 0\"}", &lserror);
+
+  return true;
 }
 
 bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
@@ -26,7 +30,7 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
-    "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+    "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_key_hold(LSHandle* lshandle, LSMessage *message, void *ctx) {
@@ -34,7 +38,7 @@ bool set_key_hold(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
-    "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+    "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
@@ -42,7 +46,7 @@ bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
-      "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+      "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
@@ -50,7 +54,7 @@ bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
-      "\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
+      "{\"returnValue: -1\", \"errorText\": \"Not implemented yet\"}", &lserror);
 }
 
 LSMethod luna_methods[] = { 

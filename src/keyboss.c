@@ -94,7 +94,8 @@ static void *pipe_keys(void *ptr) {
     goto err;
 
   while (read(k_fd, &event, sizeof (struct input_event)) > 0) {
-    syslog(LOG_INFO, "(%d) event %d, %d, %d\n", u_fd, event.type, event.code, event.value);
+    syslog(LOG_INFO, "event type: %d, code: %d, value: %d\n", 
+        event.type, event.code, event.value);
     send_event(u_fd, event.type, event.code, event.value);
   }
 
@@ -120,6 +121,7 @@ int send_key(__u16 code, __s32 value) {
 void cleanup(int sig) {
   /* Restart hidd to let it re-initialize with the changed 
    * /etc/input/keypad0 symlink */
+  syslog(LOG_INFO, "caught sig %d", sig);
   pthread_cancel(pipe_id);
   restart_hidd();
 }
