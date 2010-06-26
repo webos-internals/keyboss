@@ -1,0 +1,17 @@
+# WebOS Internals KeyBoss
+description "keyboss: Complete Keyboard Control"
+author "Eric Gaudet"
+
+start on stopped finish
+
+# Stop when the Software Update tool is about to install an update.  The tool
+# uses upstart to restart jobs when the installation is complete.
+stop on started start_update
+
+respawn
+
+script
+
+exec /var/usr/sbin/org.webosinternals.keyboss
+
+end script
