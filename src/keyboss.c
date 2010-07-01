@@ -10,11 +10,21 @@
 #include "luna_service.h"
 #include "keyboss.h"
 
+typedef enum {
+  INACTIVE = 0,
+  HOLDING,
+  WAITING
+} TIMERSTATE;
+
 static int u_fd = -1;
 static int k_fd = -1;
 static pthread_t pipe_id;
 int current_delay;
 int current_period;
+int hold_enabled = 0;
+int double_enabled = 0;
+int hold_key = 0;
+int holding = INACTIVE;
 
 static void restart_hidd(void) {
   system("/sbin/stop hidd");
@@ -29,12 +39,119 @@ static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   event.code = code;
   event.value = value;
 
+#if 0
+  syslog(LOG_INFO, "send event type: %d, code %d, value %d\n",
+      event.type, event.code, event.value);
+#endif
   if (write(fd, &event, sizeof(event)) != sizeof(event)) {
     syslog(LOG_INFO, "write to fd %d failed\n", fd);
     return -1;
   }
 
   return 0;
+}
+
+void handle_double() {
+  send_key(KEY_BACKSPACE, 1);
+  send_key(KEY_BACKSPACE, 0);
+  send_key(hold_key, 0);
+  send_key(KEY_RIGHTALT, 1);
+  send_key(KEY_RIGHTALT, 2);
+  send_key(hold_key, 1);
+  send_key(hold_key, 0);
+  send_key(KEY_RIGHTALT, 0);
+  holding = INACTIVE;
+}
+
+static int modifiable(__u16 code) {
+  switch (code) {
+    case KEY_Q:
+    case KEY_W:
+    case KEY_E:
+    case KEY_R:
+    case KEY_T:
+    case KEY_Y:
+    case KEY_U:
+    case KEY_I:
+    case KEY_O:
+    case KEY_P:
+    case KEY_A:
+    case KEY_S:
+    case KEY_D:
+    case KEY_F:
+    case KEY_G:
+    case KEY_H:
+    case KEY_J:
+    case KEY_K:
+    case KEY_L:
+    case KEY_Z:
+    case KEY_X:
+    case KEY_C:
+    case KEY_V:
+    case KEY_B:
+    case KEY_N:
+    case KEY_M:
+    case KEY_COMMA:
+    case KEY_0:
+      return 1;
+      break;
+    default:
+      return 0;
+      break;
+  }
+}
+
+static int process_event(struct input_event *event) {
+  if ((event->type != EV_KEY) || !modifiable(event->code) || (!hold_enabled && !double_enabled))
+    goto send;
+
+#if 0
+  syslog(LOG_INFO, "code %d, value %d, hold %d, double %d, holding %d\n", event->code, event->value, hold_enabled, double_enabled, holding);
+#endif
+  if (event->value == 1) {
+    if (double_enabled && holding && (event->code == hold_key)) {
+      handle_double();
+      return 0;
+    }
+    else {
+      hold_key = event->code;
+      ualarm(500 * 1000, 0);
+      holding = HOLDING;
+    }
+  }
+  else if (event->value == 0) {
+    if (event->code == hold_key && holding) {
+      if (double_enabled) {
+        holding = WAITING;
+      }
+      else {
+        holding = INACTIVE;
+        ualarm(0, 0);
+      }
+    }
+  }
+  else {
+    if (hold_enabled || holding)
+      return 0;
+  }
+
+send:
+  send_event(u_fd, event->type, event->code, event->value);
+  return 0;
+}
+
+static void check_key_hold(int sig) {
+  if (hold_enabled && holding == HOLDING) {
+    send_key(KEY_BACKSPACE, 1);
+    send_key(KEY_BACKSPACE, 0);
+    send_key(hold_key, 0);
+    send_key(KEY_LEFTSHIFT, 1);
+    send_key(KEY_LEFTSHIFT, 2);
+    send_key(hold_key, 1);
+    send_key(hold_key, 0);
+    send_key(KEY_LEFTSHIFT, 0);
+  }
+  holding = INACTIVE;
 }
 
 static void *pipe_keys(void *ptr) {
@@ -98,9 +215,12 @@ static void *pipe_keys(void *ptr) {
     goto err;
 
   while (read(k_fd, &event, sizeof (struct input_event)) > 0) {
+#if 0
     syslog(LOG_INFO, "event type: %d, code: %d, value: %d\n", 
         event.type, event.code, event.value);
-    send_event(u_fd, event.type, event.code, event.value);
+#endif
+    process_event(&event);
+    //send_event(u_fd, event.type, event.code, event.value);
   }
 
 err:
@@ -120,7 +240,7 @@ bool is_valid_code(int code) {
 int set_repeat(__s32 delay, __s32 period) {
   int fd;
 
-  /* FIXME: use sysfs to find the keypad device by name */ 
+  /* FIXME: use sysfs to find the keypad device by name ? */ 
   fd=open(KEYPAD_DEVICE, O_WRONLY | O_SYNC); 
   if (fd < 0) {
     syslog(LOG_INFO, "Unable to open device %s in write mode\n", KEYPAD_DEVICE);
@@ -141,8 +261,12 @@ int set_repeat(__s32 delay, __s32 period) {
 }
 
 int send_key(__u16 code, __s32 value) {
+  __s32 rel_val = 0;
+  syslog(LOG_INFO, "send key %d, %d\n", code, value);
   send_event(u_fd, EV_KEY, code, value);
-  send_event(u_fd, EV_SYN, SYN_REPORT, 0);
+  if (value == 2)
+    rel_val = 1;
+  send_event(u_fd, EV_SYN, SYN_REPORT, rel_val);
 }
 
 void cleanup(int sig) {
@@ -157,6 +281,8 @@ int main(int argc, char *argv[]) {
 	signal(SIGQUIT, cleanup);
 	signal(SIGHUP, cleanup);
 	signal(SIGKILL, cleanup);
+
+  signal(SIGALRM, check_key_hold);
 
   pthread_create(&pipe_id, NULL, pipe_keys, NULL);
 

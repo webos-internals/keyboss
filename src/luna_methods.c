@@ -58,7 +58,7 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   syslog(LOG_INFO, "useDefault %d, delay %d, period %d\n", use_default, delay, period);
   if (!use_default && (delay < 0 || period < 0 || delay > 3000 || period > 3000)) {
     LSMessageRespond(message, 
-        "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
+        "{\"returnValue\": -1, \"errorText\": \"Bad paramater\"}", &lserror);
   }
 
   if (use_default)
@@ -71,13 +71,19 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
+#if 0
 bool set_key_hold(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
+  key_hold = 1;
+  LSMessageRespond(message, "{\"returnValue\": 0}", &lserror);
+
+  return true;
   LSMessageRespond(message, 
     "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
 }
+#endif
 
 bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
@@ -85,6 +91,41 @@ bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   LSMessageRespond(message, 
       "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
+}
+
+bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  json_t *object;
+  char *hold;
+  char *doubletap;
+
+  object = LSMessageGetPayloadJSON(message);
+  json_get_string(object, "hold", &hold);
+  json_get_string(object, "doubletap", &doubletap);
+
+  if (hold) {
+    if (!strcmp(hold, "on"))
+      hold_enabled = 1;
+    else
+      hold_enabled = 0;
+  }
+
+  if (doubletap) {
+    if (!strcmp(doubletap, "on"))
+      double_enabled = 1;
+    else
+      double_enabled = 0;
+  }
+
+  LSMessageRespond(message, "{\"returnValue\": 0}", &lserror);
+  
+  return true;
+
+  LSMessageRespond(message, 
+      "{\"returnValue\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
+
+  return false;
 }
 
 bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
@@ -99,8 +140,11 @@ LSMethod luna_methods[] = {
   {"emulateKey", emulate_key},
   {"getRepeatRate", get_repeat_rate},
   {"setRepeatRate", set_repeat_rate},
+#if 0
   {"setKeyHold", set_key_hold},
   {"setKeyDouble", set_key_double},
+#endif
+  {"setModifiers", set_modifiers},
   {"setMode", set_mode},
   {0,0}
 };

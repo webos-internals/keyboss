@@ -16,6 +16,9 @@
 
 int current_delay;
 int current_period;
+int hold_enabled;
+int double_enabled;
+
 /* function declarations */
 bool is_valid_code(int code);
 int send_key(__u16 code, __s32 value);

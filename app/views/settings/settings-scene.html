@@ -7,6 +7,26 @@
 
   <div class="palm-group">
     <div class="palm-group-title">
+      <span x-mojo-loc=''>KeyCaps</span>
+    </div>
+
+    <div class="palm-list">
+      <div id="keyCapsHoldRow" class="palm-row first">
+        <div class="palm-row-wrapper">
+          <div x-mojo-element="ToggleButton" id="holdToggle"></div>
+          <div class="label left" x-mojo-loc=''>Hold for Caps</div>
+        </div>
+      </div>
+
+      <div id="keyCapsDoubleRow" class="palm-row last">
+        <div class="palm-row-wrapper">
+          <div x-mojo-element="ToggleButton" id="doubleToggle"></div>
+					<div class="label left" x-mojo-loc=''>Doubletap for Func</div>
+        </div>
+      </div>
+
+  <div class="palm-group">
+    <div class="palm-group-title">
       <span x-mojo-loc=''>Repeat Rate</span>
     </div>
 
@@ -21,7 +41,7 @@
 
       <div id="freqSliderRow" class="palm-row">
         <div class="palm-row-wrapper">
-					<div class="title" x-mojo-loc=''>Repeat Period</div>
+					<div class="title" x-mojo-loc=''>Repeat Frequency</div>
           <div x-mojo-element="Slider" id="freqSlider" class="palm-slider">
           </div>
         </div>
@@ -38,5 +58,8 @@
     </div>
   </div>
 
-    <div id="defaultButton" x-mojo-element="Button"></div>
+  <div id="defaultButton" x-mojo-element="Button"></div>
+
+  </div>
+
 </div>

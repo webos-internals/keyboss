@@ -9,6 +9,8 @@ service.getRepeatRate = function(callback) {
     onSuccess: callback,
     onFailure: callback
   });
+
+  return request;
 }
 
 service.setRepeatRate = function(callback, delay, period, useDefault) {
@@ -18,6 +20,20 @@ service.setRepeatRate = function(callback, delay, period, useDefault) {
       delay: delay,
       period: period,
       useDefault: useDefault
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
+
+service.setModifiers = function(callback, hold, doubletap) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'setModifiers',
+    parameters: {
+      hold: hold,
+      doubletap: doubletap,
     },
     onSuccess: callback,
     onFailure: callback

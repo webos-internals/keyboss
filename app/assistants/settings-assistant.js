@@ -33,6 +33,17 @@ SettingsAssistant.prototype.setup = function() {
     focusMode: Mojo.Widget.focusInsertMode
   }
 
+  this.toggleAttributes = {
+    trueValue: "on",
+    falseValue: "off",
+    modelProperty: 'value',
+    enabledProp: 'disabled'
+  }
+
+  this.toggleModel = {
+    value: false,
+  }
+
 	/* use Mojo.View.render to render view templates and add them to the scene, if needed */
 	
 	/* setup widgets here */
@@ -46,6 +57,10 @@ SettingsAssistant.prototype.setup = function() {
       this.freqModel);
   this.controller.setupWidget('preview', this.textAttributes, {});
   this.controller.setupWidget('defaultButton', {}, {buttonLabel: 'Reset'});
+  this.controller.setupWidget('holdToggle', this.toggleAttributes, 
+      this.toggleModel)
+  this.controller.setupWidget('doubleToggle', this.toggleAttributes, 
+      this.toggleModel)
 	
   this.freqSlider = this.controller.get('freqSlider');
   this.delaySlider = this.controller.get('delaySlider');
@@ -61,7 +76,17 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.defaultButton, Mojo.Event.tap, 
       this.setRateDefault.bindAsEventListener(this));
   this.controller.listen(this.controller.sceneElement, Mojo.Event.keydown, this.keyDown.bind(this));
+  $('holdToggle').observe('mojo-property-change', this.toggleHold.bindAsEventListener());
+  $('doubleToggle').observe('mojo-property-change', this.toggleDouble.bindAsEventListener());
 };
+
+SettingsAssistant.prototype.toggleHold = function(event) {
+  service.setModifiers(this.callback, event.value, 0);
+}
+
+SettingsAssistant.prototype.toggleDouble = function(event) {
+  service.setModifiers(this.callback, 0, event.value);
+}
 
 SettingsAssistant.prototype.callback = function(payload) {
   for (p in payload) {
