@@ -123,6 +123,7 @@ static int process_event(struct input_event *event) {
     if (event->code == hold_key && holding) {
       if (double_enabled) {
         holding = WAITING;
+        return 0;
       }
       else {
         holding = INACTIVE;

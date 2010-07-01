@@ -107,14 +107,14 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   if (hold) {
     if (!strcmp(hold, "on"))
       hold_enabled = 1;
-    else
+    else if (!strcmp(hold, "off"))
       hold_enabled = 0;
   }
 
   if (doubletap) {
     if (!strcmp(doubletap, "on"))
       double_enabled = 1;
-    else
+    else if (!strcmp(doubletap, "off"))
       double_enabled = 0;
   }
 
