@@ -91,12 +91,16 @@ SettingsAssistant.prototype.showError = function(message, callback) {
         });
 }
 
+SettingsAssistant.prototype.close = function() {
+  window.close();
+}
+
 SettingsAssistant.prototype.handleStatus = function(payload) {
   if (!payload || !payload.returnValue) {
-    this.showError("Service does not seem to be running, try rebooting and then re-install if unsuccessful");
+    this.showError("Service does not seem to be running, try rebooting and then re-install if unsuccessful", this.close.bind(this));
   }
   else if (payload.k_fd < 0) {
-    this.showError("Service reports keypad device cannot be opened, unfortunately NO functionality will work", this.window.close);
+    this.showError("Service reports keypad device cannot be opened, unfortunately NO functionality will work", this.close.bind(this));
   }
   else if (payload.u_fd < 0) {
     this.showError("Service reports uinput device cannot be opened.  The uinput module is required for KeyCaps functionality and keyboard emulation.  If you would like to use these functionalities, please make sure the Uinput module is installed via Preware and reboot.");
