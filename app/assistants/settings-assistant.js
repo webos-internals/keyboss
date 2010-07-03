@@ -81,11 +81,12 @@ SettingsAssistant.prototype.setup = function() {
   service.getStatus(this.handleStatus.bind(this));
 };
 
-SettingsAssistant.prototype.showError = function(message) {
+SettingsAssistant.prototype.showError = function(message, callback) {
     this.controller.showAlertDialog(
         {
           title: $LL("Error"),
           message: message,
+          onChoose: callback,
           choices: [{label: $LL("OK")}]
         });
 }
@@ -95,10 +96,12 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
     this.showError("Service does not seem to be running, try rebooting and then re-install if unsuccessful");
   }
   else if (payload.k_fd < 0) {
-    this.showError("Service reports keypad device cannot be opened, unfortunately NO functionality will work");
+    this.showError("Service reports keypad device cannot be opened, unfortunately NO functionality will work", this.window.close);
   }
   else if (payload.u_fd < 0) {
     this.showError("Service reports uinput device cannot be opened.  The uinput module is required for KeyCaps functionality and keyboard emulation.  If you would like to use these functionalities, please make sure the Uinput module is installed via Preware and reboot.");
+    this.toggleModel.disabled = true;
+    this.controller.modelChanged(this.toggleModel, this);
   }
 }
 
