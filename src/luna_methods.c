@@ -71,32 +71,6 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
-#if 0
-bool set_key_hold(LSHandle* lshandle, LSMessage *message, void *ctx) {
-  LSError lserror;
-  LSErrorInit(&lserror);
-
-  key_hold = 1;
-  LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
-
-  return true;
-  LSMessageRespond(message, 
-    "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
-
-  return true;
-}
-
-bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
-  LSError lserror;
-  LSErrorInit(&lserror);
-
-  LSMessageRespond(message, 
-      "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
-
-  return true;
-}
-#endif
-
 bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
@@ -127,18 +101,6 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
-#if 0
-bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
-  LSError lserror;
-  LSErrorInit(&lserror);
-
-  LSMessageRespond(message, 
-      "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
-
-  return true;
-}
-#endif
-
 bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
@@ -157,14 +119,7 @@ LSMethod luna_methods[] = {
   {"emulateKey", emulate_key},
   {"getRepeatRate", get_repeat_rate},
   {"setRepeatRate", set_repeat_rate},
-#if 0
-  {"setKeyHold", set_key_hold},
-  {"setKeyDouble", set_key_double},
-#endif
   {"setModifiers", set_modifiers},
-#if 0
-  {"setMode", set_mode},
-#endif
   {0,0}
 };
 

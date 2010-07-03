@@ -14,12 +14,12 @@
 #define DEFAULT_DELAY  (500)
 #define DEFAULT_PERIOD (100)
 
-int current_delay;
-int current_period;
-int hold_enabled;
-int double_enabled;
-static int u_fd;
-static int k_fd;
+extern int current_delay;
+extern int current_period;
+extern int hold_enabled;
+extern int double_enabled;
+extern int u_fd;
+extern int k_fd;
 
 /* function declarations */
 bool is_valid_code(int code);

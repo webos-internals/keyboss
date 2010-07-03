@@ -16,9 +16,9 @@ typedef enum {
   WAITING
 } TIMERSTATE;
 
-static int u_fd = -1;
-static int k_fd = -1;
 static pthread_t pipe_id;
+int u_fd = -1;
+int k_fd = -1;
 int current_delay;
 int current_period;
 int hold_enabled = 0;
@@ -230,6 +230,7 @@ err:
   if (k_fd > 0)
     close(k_fd);
 
+  syslog(LOG_INFO, "err u_fd %d", u_fd);
   return NULL;
 
 }
