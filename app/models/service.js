@@ -2,7 +2,7 @@ service.identifier = 'palm://org.webosinternals.keyboss';
 
 function service() {}
 
-service.getRepeatRate = function(callback) {
+service.getStatus = function(callback) {
   var request = new Mojo.Service.Request(service.identifier, {
     method: 'getStatus',
     parameters: {},
