@@ -18,8 +18,8 @@ int current_delay;
 int current_period;
 int hold_enabled;
 int double_enabled;
-int u_fd;
-int k_fd;
+static int u_fd;
+static int k_fd;
 
 /* function declarations */
 bool is_valid_code(int code);
