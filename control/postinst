@@ -45,8 +45,5 @@ cp $APPS/usr/palm/applications/${PID}/udev/49-${PID}.rules /etc/udev/rules.d/
 # Check the upstart script is installed
 [ -f /var/palm/event.d/${PID} ] || [ -f /etc/event.d/${PID} ] || exit 1
 
-# Check the dbus service is installed
-[ -f /var/palm/system-services/${PID}.service ] || [ -f /usr/share/dbus-1/system-services/${PID}.service ] || exit 1
-
 exit 0
 
