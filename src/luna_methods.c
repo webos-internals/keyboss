@@ -82,8 +82,9 @@ bool set_key_hold(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
   LSMessageRespond(message, 
     "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
+
+  return true;
 }
-#endif
 
 bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
@@ -91,7 +92,10 @@ bool set_key_double(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   LSMessageRespond(message, 
       "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
+
+  return true;
 }
+#endif
 
 bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
@@ -121,24 +125,21 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
   
   return true;
-
-  LSMessageRespond(message, 
-      "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
-
-  return false;
 }
 
-bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
+#if 0
+bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
       "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
 
-  return false;
+  return true;
 }
+#endif
 
-bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
+bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
@@ -149,11 +150,6 @@ bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSMessageRespond(message, message_buf, &lserror);
 
   return true;
-
-  LSMessageRespond(message, 
-      "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
-
-  return false;
 }
 
 LSMethod luna_methods[] = { 
@@ -166,7 +162,9 @@ LSMethod luna_methods[] = {
   {"setKeyDouble", set_key_double},
 #endif
   {"setModifiers", set_modifiers},
+#if 0
   {"setMode", set_mode},
+#endif
   {0,0}
 };
 
