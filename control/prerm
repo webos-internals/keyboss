@@ -19,9 +19,6 @@ APPS=/media/cryptofs/apps
 # Remove the keyboss executable
 rm -f /var/usr/sbin/${PID}
 
-# Remove the dbus service
-rm -f /usr/share/dbus-1/system-services/${PID}.service /var/palm/system-services/${PID}.service
-
 # Remove the upstart script
 rm -f /etc/event.d/${PID} /var/palm/event.d/${PID} /var/palm/event.d/${PID}-settings
 
