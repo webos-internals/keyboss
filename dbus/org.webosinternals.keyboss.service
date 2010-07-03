@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.webosinternals.keyboss
-Exec=/var/usr/sbin/org.webosinternals.keyboss
