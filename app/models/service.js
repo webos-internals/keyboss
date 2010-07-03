@@ -4,6 +4,17 @@ function service() {}
 
 service.getRepeatRate = function(callback) {
   var request = new Mojo.Service.Request(service.identifier, {
+    method: 'getStatus',
+    parameters: {},
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
+
+service.getRepeatRate = function(callback) {
+  var request = new Mojo.Service.Request(service.identifier, {
     method: 'getRepeatRate',
     parameters: {},
     onSuccess: callback,

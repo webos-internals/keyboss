@@ -78,7 +78,29 @@ SettingsAssistant.prototype.setup = function() {
   this.controller.listen(this.controller.sceneElement, Mojo.Event.keydown, this.keyDown.bind(this));
   $('holdToggle').observe('mojo-property-change', this.toggleHold.bindAsEventListener());
   $('doubleToggle').observe('mojo-property-change', this.toggleDouble.bindAsEventListener());
+  service.getStatus(this.handleStatus.bind(this));
 };
+
+SettingsAssistant.prototype.showError = function(message) {
+    this.controller.showAlertDialog(
+        {
+          title: $LL("Error"),
+          message: message,
+          choices: [{label: $LL("OK")}]
+        });
+}
+
+SettingsAssistant.prototype.handleStatus = function(payload) {
+  if (!payload || !payload.returnValue) {
+    this.showError("Service does not seem to be running, try rebooting and then re-install if unsuccessful");
+  }
+  else if (payload.k_fd < 0) {
+    this.showError("Service reports keypad device cannot be opened, unfortunately NO functionality will work");
+  }
+  else if (payload.u_fd < 0) {
+    this.showError("Service reports uinput device cannot be opened.  The uinput module is required for KeyCaps functionality and keyboard emulation.  If you would like to use these functionalities, please make sure the Uinput module is installed via Preware and reboot.");
+  }
+}
 
 SettingsAssistant.prototype.toggleHold = function(event) {
   service.setModifiers(this.callback, event.value, 0);

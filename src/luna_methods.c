@@ -128,15 +128,36 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return false;
 }
 
-bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
+bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
 
   LSMessageRespond(message, 
       "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
+
+  return false;
+}
+
+bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+
+  memset(message_buf, 0, sizeof message_buf);
+  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"u_kd\": %d}", 
+      u_fd, u_kd);
+
+  LSMessageRespond(message, message_buf, &lserror);
+
+  return true;
+
+  LSMessageRespond(message, 
+      "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Not implemented yet\"}", &lserror);
+
+  return false;
 }
 
 LSMethod luna_methods[] = { 
+  {"getStatus", get_status},
   {"emulateKey", emulate_key},
   {"getRepeatRate", get_repeat_rate},
   {"setRepeatRate", set_repeat_rate},
