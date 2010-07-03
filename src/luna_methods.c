@@ -143,8 +143,8 @@ bool set_mode(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
 
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"u_kd\": %d}", 
-      u_fd, u_kd);
+  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d}", 
+      u_fd, k_fd);
 
   LSMessageRespond(message, message_buf, &lserror);
 
