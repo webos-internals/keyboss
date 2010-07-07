@@ -8,6 +8,16 @@
 #define KEYPAD_DEVICE "/dev/input/event2"
 #define UINPUT_DEVICE "/dev/input/uinput"
 
+/* FIXME: Get these macros from Palm patched input.h */
+
+/* these keys are defined for Joplin */
+#define KEY_CENTER		232
+#define KEY_LAUNCHER		245
+#define KEY_ALT			246
+#define KEY_PTT         	247
+#define KEY_PUSH_TO_TALK   	247
+#define KEY_SLIDER		248
+
 /* Default values for maxim7359 keypad can be seen in 
  * linux-2.6.24/arch/arm/mach-omap3pe/board-sirloin-3430.c
  */

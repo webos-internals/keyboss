@@ -105,7 +105,7 @@ static int process_event(struct input_event *event) {
   if ((event->type != EV_KEY) || !modifiable(event->code) || (!hold_enabled && !double_enabled))
     goto send;
 
-#if 0
+#if 1
   syslog(LOG_INFO, "code %d, value %d, hold %d, double %d, holding %d\n", event->code, event->value, hold_enabled, double_enabled, holding);
 #endif
   if (event->value == 1) {
@@ -198,7 +198,7 @@ static void *pipe_keys(void *ptr) {
   if (ioctl(u_fd,UI_SET_EVBIT,EV_KEY) < 0)
     goto err;
 
-  for (i=KEY_ESC; i<KEY_UNKNOWN; i++) {
+  for (i=KEY_ESC; i<=KEY_SLIDER; i++) {
     if (ioctl(u_fd, UI_SET_KEYBIT, i) < 0)
       goto err;
   }
@@ -216,7 +216,7 @@ static void *pipe_keys(void *ptr) {
     goto err;
 
   while (read(k_fd, &event, sizeof (struct input_event)) > 0) {
-#if 0
+#if 1
     syslog(LOG_INFO, "event type: %d, code: %d, value: %d\n", 
         event.type, event.code, event.value);
 #endif
@@ -236,7 +236,7 @@ err:
 }
 
 bool is_valid_code(int code) {
-  return (code >= KEY_ESC && code <KEY_UNKNOWN);
+  return (code >= KEY_ESC && code <= KEY_SLIDER);
 }
 
 int set_repeat(__s32 delay, __s32 period) {
