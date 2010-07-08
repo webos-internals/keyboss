@@ -20,7 +20,7 @@ bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
   if (!is_valid_code(code)) {
     LSMessageRespond(message, 
         "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Invalid key code\"}", &lserror);
-    return false;
+    return true;
   }
 
   send_key(code, keydown);

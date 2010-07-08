@@ -105,7 +105,7 @@ static int process_event(struct input_event *event) {
   if ((event->type != EV_KEY) || !modifiable(event->code) || (!hold_enabled && !double_enabled))
     goto send;
 
-#if 1
+#if 0
   syslog(LOG_INFO, "code %d, value %d, hold %d, double %d, holding %d\n", event->code, event->value, hold_enabled, double_enabled, holding);
 #endif
   if (event->value == 1) {
@@ -216,7 +216,7 @@ static void *pipe_keys(void *ptr) {
     goto err;
 
   while (read(k_fd, &event, sizeof (struct input_event)) > 0) {
-#if 1
+#if 0
     syslog(LOG_INFO, "event type: %d, code: %d, value: %d\n", 
         event.type, event.code, event.value);
 #endif
@@ -264,7 +264,9 @@ int set_repeat(__s32 delay, __s32 period) {
 
 int send_key(__u16 code, __s32 value) {
   __s32 rel_val = 0;
+#if 0
   syslog(LOG_INFO, "send key %d, %d\n", code, value);
+#endif
   send_event(u_fd, EV_KEY, code, value);
   if (value == 2)
     rel_val = 1;
@@ -272,9 +274,12 @@ int send_key(__u16 code, __s32 value) {
 }
 
 void cleanup(int sig) {
+#if 0
   syslog(LOG_INFO, "cleanup (sig %d)", sig);
+#endif
   pthread_cancel(pipe_id);
   set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
+  exit(0);
 }
 
 int main(int argc, char *argv[]) {
