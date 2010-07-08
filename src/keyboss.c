@@ -24,6 +24,7 @@ int current_period;
 int hold_enabled = 0;
 int double_enabled = 0;
 int hold_key = 0;
+int double_key = 0;
 int holding = INACTIVE;
 
 static void restart_hidd(void) {
@@ -52,7 +53,6 @@ static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
 void handle_double() {
   send_key(KEY_BACKSPACE, 1);
   send_key(KEY_BACKSPACE, 0);
-  send_key(hold_key, 0);
   send_key(KEY_RIGHTALT, 1);
   send_key(KEY_RIGHTALT, 2);
   send_key(hold_key, 1);
@@ -103,10 +103,12 @@ static int process_event(struct input_event *event) {
   if ((event->type != EV_KEY) || !modifiable(event->code) || (!hold_enabled && !double_enabled))
     goto send;
 
-  syslog(LOG_INFO, "code %d, value %d, hold %d, double %d, holding %d\n", event->code, event->value, hold_enabled, double_enabled, holding);
+  syslog(LOG_INFO, "code %d, value %d, hold %d, double %d, holding %d\n", 
+      event->code, event->value, hold_enabled, double_enabled, holding);
   if (event->value == 1) {
     if (double_enabled && holding && (event->code == hold_key)) {
       handle_double();
+      double_key = event->code;
       return 0;
     }
     else {
@@ -119,12 +121,15 @@ static int process_event(struct input_event *event) {
     if (event->code == hold_key && holding) {
       if (double_enabled) {
         holding = WAITING;
-        return 0;
       }
       else {
         holding = INACTIVE;
         ualarm(0, 0);
       }
+    }
+    else if (event->code == double_key) {
+      double_key = 0;
+      return 0;
     }
   }
   else {
