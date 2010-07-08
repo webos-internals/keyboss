@@ -39,10 +39,8 @@ static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   event.code = code;
   event.value = value;
 
-#if 0
   syslog(LOG_INFO, "send event type: %d, code %d, value %d\n",
       event.type, event.code, event.value);
-#endif
   if (write(fd, &event, sizeof(event)) != sizeof(event)) {
     syslog(LOG_INFO, "write to fd %d failed\n", fd);
     return -1;
@@ -105,9 +103,7 @@ static int process_event(struct input_event *event) {
   if ((event->type != EV_KEY) || !modifiable(event->code) || (!hold_enabled && !double_enabled))
     goto send;
 
-#if 0
   syslog(LOG_INFO, "code %d, value %d, hold %d, double %d, holding %d\n", event->code, event->value, hold_enabled, double_enabled, holding);
-#endif
   if (event->value == 1) {
     if (double_enabled && holding && (event->code == hold_key)) {
       handle_double();
@@ -216,10 +212,8 @@ static void *pipe_keys(void *ptr) {
     goto err;
 
   while (read(k_fd, &event, sizeof (struct input_event)) > 0) {
-#if 0
     syslog(LOG_INFO, "event type: %d, code: %d, value: %d\n", 
         event.type, event.code, event.value);
-#endif
     process_event(&event);
     //send_event(u_fd, event.type, event.code, event.value);
   }
@@ -264,9 +258,7 @@ int set_repeat(__s32 delay, __s32 period) {
 
 int send_key(__u16 code, __s32 value) {
   __s32 rel_val = 0;
-#if 0
   syslog(LOG_INFO, "send key %d, %d\n", code, value);
-#endif
   send_event(u_fd, EV_KEY, code, value);
   if (value == 2)
     rel_val = 1;
@@ -274,9 +266,7 @@ int send_key(__u16 code, __s32 value) {
 }
 
 void cleanup(int sig) {
-#if 0
   syslog(LOG_INFO, "cleanup (sig %d)", sig);
-#endif
   pthread_cancel(pipe_id);
   set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
   exit(0);
