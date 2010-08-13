@@ -1,7 +1,7 @@
 VERSION = unknown
 
 STAGING_DIR=${ROOT}
-CC=arm-none-linux-gnueabi-gcc
+#CC=arm-none-linux-gnueabi-gcc
 
 CPPFLAGS := -g -DVERSION=\"${VERSION}\" \
 					-I${STAGING_DIR}/usr/include/glib-2.0 \

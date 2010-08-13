@@ -71,6 +71,103 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
+bool remove_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  json_t *object;
+  char *param_trigger;
+  char *param_action;
+  ACTIONS action;
+  int ret = 0;
+
+  object = LSMessageGetPayloadJSON(message);
+  json_get_string(object, "trigger", &param_trigger);
+  json_get_string(object, "action", &param_action);
+
+  if (!param_trigger || !param_action)
+    goto err;
+
+  if (!strcmp(param_action, "function"))
+    action = ACTION_FUNCTION;
+  else if (!strcmp(param_action, "capitalize"))
+    action = ACTION_CAPITALIZE;
+  else
+    goto err;
+
+  if (!strcmp(param_trigger, "tap"))
+    ret = remove_tap_action(action);
+  else if (!strcmp(param_trigger, "hold"))
+    ret = remove_hold_action(action);
+
+  LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
+
+  return true;
+
+err:
+  LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Invalid or missing trigger/action\"}", &lserror);
+
+  return true;
+}
+bool install_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  json_t *object;
+  char *param_trigger;
+  char *param_action;
+  ACTIONS action;
+  int ret = 0;
+
+  object = LSMessageGetPayloadJSON(message);
+  json_get_string(object, "trigger", &param_trigger);
+  json_get_string(object, "action", &param_action);
+
+  if (!param_trigger || !param_action)
+    goto err;
+
+  if (!strcmp(param_action, "function"))
+    action = ACTION_FUNCTION;
+  else if (!strcmp(param_action, "capitalize"))
+    action = ACTION_CAPITALIZE;
+  else
+    goto err;
+
+  if (!strcmp(param_trigger, "tap"))
+    ret = install_tap_action(action);
+  else if (!strcmp(param_trigger, "hold"))
+    ret = install_hold_action(action);
+
+  LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
+
+  return true;
+
+err:
+  LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Invalid or missing trigger/action\"}", &lserror);
+
+  return true;
+}
+
+bool set_tap_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  json_t *object;
+  int timeout = 0;
+
+  object = LSMessageGetPayloadJSON(message);
+  json_get_int(object, "timeout", &timeout);
+
+  syslog(LOG_INFO, "set tap timeout: %dms", timeout);
+  if (timeout < 0 || timeout > 2000) {
+    LSMessageRespond(message, 
+        "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Bad paramater\"}", &lserror);
+  }
+
+  set_tap_timeout_ms(timeout);
+
+  LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
+
+  return true;
+}
+
 bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
@@ -120,6 +217,9 @@ LSMethod luna_methods[] = {
   {"getRepeatRate", get_repeat_rate},
   {"setRepeatRate", set_repeat_rate},
   {"setModifiers", set_modifiers},
+  {"installAction", install_action},
+  {"removeAction", remove_action},
+  {"setTapTimeout", set_tap_timeout},
   {0,0}
 };
 

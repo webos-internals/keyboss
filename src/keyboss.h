@@ -24,6 +24,13 @@
 #define DEFAULT_DELAY  (500)
 #define DEFAULT_PERIOD (100)
 
+typedef enum { 
+  ACTION_NONE, 
+  ACTION_DEFAULT, 
+  ACTION_FUNCTION, 
+  ACTION_CAPITALIZE
+} ACTIONS;
+
 extern int current_delay;
 extern int current_period;
 extern int hold_enabled;
@@ -35,5 +42,6 @@ extern int k_fd;
 bool is_valid_code(int code);
 int send_key(__u16 code, __s32 value);
 int set_repeat(__s32 delay, __s32 period);
+int set_tap_timeout_ms(int ms);
 
 #endif /* KEYBOSS_H */
