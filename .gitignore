@@ -1,3 +1,6 @@
+build
+ipkgs
 keyboss
 *.swp
 *.o
+*.ipk

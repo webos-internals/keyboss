@@ -52,3 +52,27 @@ service.setModifiers = function(callback, hold, doubletap) {
 
   return request;
 }
+
+service.installAction = function(callback, action, trigger) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'installAction',
+    parameters: {
+      trigger: trigger,
+      action: action
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+}
+
+service.removeAction = function(callback, action, trigger) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'removeAction',
+    parameters: {
+      trigger: trigger,
+      action: action
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+}

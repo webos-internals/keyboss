@@ -198,13 +198,48 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
+//TODO: Pixi/Pre
+bool set_prox_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit (&lserror);
+  char *sysfs_path = "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout";
+  FILE *fd;
+  json_t *object;
+  int prox_timeout = -1;
+ 
+  object = LSMessageGetPayloadJSON(message);
+  json_get_int(object, "value", &prox_timeout);
+
+  if (prox_timeout < 0) {
+    LSMessageReply(lshandle, message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Must supply value\"}", &lserror);
+    return true;
+  }
+
+  fd = fopen(sysfs_path, "w");
+  if (!fd || fprintf(fd, "%d", prox_timeout) < 0) {
+    LSMessageReply(lshandle, message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Error writing to prox_timeout\"}", &lserror);
+    return true;
+  }
+
+  LSMessageReply(lshandle, message, "{\"returnValue\": true}", &lserror);
+  return true;
+}
+
 bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
+  char *sysfs_path = "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout";
+  FILE *fd;
+  int prox_timeout = -1;
+  char buffer[4];
+
+  fd = fopen(sysfs_path, "w");
+  if (fd)
+    fclose(fd);
 
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d}", 
-      u_fd, k_fd);
+  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, \"prox_timeout\": %d}", 
+      u_fd, k_fd, prox_timeout);
 
   LSMessageRespond(message, message_buf, &lserror);
 
@@ -220,6 +255,7 @@ LSMethod luna_methods[] = {
   {"installAction", install_action},
   {"removeAction", remove_action},
   {"setTapTimeout", set_tap_timeout},
+  {"setProxTimeout", set_prox_timeout},
   {0,0}
 };
 

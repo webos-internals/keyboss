@@ -4,5 +4,6 @@
         "scenes": "settings",
         "source": "app/assistants/settings-assistant.js"
     },
-    {"source": "app/models/service.js"}
+    {"source": "app/models/service.js"},
+    {"source": "app/models/cookie.js"},
 ]
