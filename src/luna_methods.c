@@ -306,6 +306,7 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   char *actions = NULL;
   char *installed_hold = NULL;
   char *installed_tap = NULL;
+  int tap_timeout = 0;
 
   syslog(LOG_DEBUG, "in get status");
   fd = fopen(sysfs_path, "w");
@@ -346,8 +347,10 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   }
   asprintf(&installed_tap, "%s]", installed_tap);
 
+  tap_timeout = tap_timer.value.it_value.tv_sec * 1000 + tap_timer.value.it_value.tv_nsec / 1000000;
+
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, max_actions: %d, actions: %s, installed_hold: %s, installed_tap: %s, \"prox_timeout\": %d}", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, prox_timeout);
+  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, max_actions: %d, actions: %s, installed_hold: %s, installed_tap: %s, \"tap_timeout\": %d, \"hold_delay\": %d, \"hold_interval\": %d, \"prox_timeout\": %d}", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, tap_timeout, current_delay, current_period, prox_timeout);
 
   LSMessageRespond(message, message_buf, &lserror);
   if (actions) free(actions);

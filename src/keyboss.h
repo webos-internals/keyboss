@@ -70,6 +70,7 @@ extern int double_enabled;
 extern int u_fd;
 extern int k_fd;
 extern KEYSTATE keystate;
+extern struct action_timer tap_timer;
 
 /* function declarations */
 bool is_valid_code(int code);

@@ -405,6 +405,20 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
       }
     }
 
+    if (payload.tap_timeout) {
+      this.tapModel.value = payload.tap_timeout;
+      this.controller.modelChanged(this.tapModel, this);
+    }
+
+    if (payload.hold_delay) {
+      this.delayModel.value = payload.hold_delay;
+      this.controller.modelChanged(this.delayModel, this);
+    }
+
+    if (payload.hold_interval) {
+      this.freqModel.value = payload.hold_interval;
+      this.controller.modelChanged(this.freqModel, this);
+    }
     this.setupActionWidgets();
     this.loadingActions = false;
   }
