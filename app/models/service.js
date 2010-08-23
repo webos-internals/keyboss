@@ -53,7 +53,20 @@ service.setModifiers = function(callback, hold, doubletap) {
   return request;
 }
 
-service.installAction = function(callback, action, trigger) {
+service.setTapTimeout = function(callback, timeout) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'setTapTimeout',
+    parameters: {
+      timeout: timeout
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
+
+service.installAction = function(callback, trigger, action) {
   var request = new Mojo.Service.Request(service.identifier, {
     method: 'installAction',
     parameters: {
@@ -65,14 +78,30 @@ service.installAction = function(callback, action, trigger) {
   });
 }
 
-service.removeAction = function(callback, action, trigger) {
+service.removeAction = function(callback, trigger, index, action) {
+  Mojo.Log.error("remove action trigger " + trigger + " index " + index + " action " + action);
   var request = new Mojo.Service.Request(service.identifier, {
     method: 'removeAction',
     parameters: {
       trigger: trigger,
+      action: action,
+      index: index
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+}
+
+service.changeAction = function(callback, trigger, index, action) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'changeAction',
+    parameters: {
+      trigger: trigger,
+      index: index,
       action: action
     },
     onSuccess: callback,
     onFailure: callback
   });
 }
+

@@ -24,6 +24,13 @@
 #define DEFAULT_DELAY  (500)
 #define DEFAULT_PERIOD (100)
 
+#define MAX_ACTIONS (8)
+
+#define KEYUP   0
+#define KEYDOWN 1
+#define KEYHOLD 2
+#define KEYQ_SIZE 8
+
 typedef enum { 
   ACTION_NONE, 
   ACTION_DEFAULT, 
@@ -31,12 +38,37 @@ typedef enum {
   ACTION_CAPITALIZE
 } ACTIONS;
 
+struct key_modifier {
+  int count;
+  int num_active;
+  int actions[MAX_ACTIONS];
+};
+
+struct action_timer {
+  timer_t timerid;
+  struct itimerspec value;
+  struct sigevent evp;
+};
+
+typedef struct {
+  int state;
+  __u16 code;
+  struct key_modifier tap;
+  struct key_modifier hold;
+} KEYSTATE;
+
+enum {
+  STATE_IDLE,
+  STATE_TAP
+};
+
 extern int current_delay;
 extern int current_period;
 extern int hold_enabled;
 extern int double_enabled;
 extern int u_fd;
 extern int k_fd;
+extern KEYSTATE keystate;
 
 /* function declarations */
 bool is_valid_code(int code);

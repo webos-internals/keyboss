@@ -5,13 +5,42 @@
 #include "luna_service.h"
 #include "keyboss.h"
 
-char message_buf[1024];
+struct action_map {
+  ACTIONS action;
+  char name[16];
+};
+
+static char message_buf[1024];
+static char tmp[256];
+
+static struct action_map available_actions[MAX_ACTIONS] = {
+  {ACTION_DEFAULT, "Default"},
+  {ACTION_FUNCTION, "Function"},
+  {ACTION_CAPITALIZE, "Capitalize"},
+  {ACTION_NONE, ""},
+  {ACTION_NONE, ""},
+  {ACTION_NONE, ""},
+  {ACTION_NONE, ""},
+  {ACTION_NONE, ""},
+};
+
+static get_action_code(char *name) {
+  int i;
+
+  for (i=0; i<MAX_ACTIONS; i++) {
+    if (available_actions[i].name[0] && !strcmp(available_actions[i].name, name)) {
+      return available_actions[i].action;
+    }
+  }
+
+  return ACTION_NONE;
+}
 
 bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
-  int code;
-  bool keydown;
+  int code = -1;
+  bool keydown = false;
   json_t *object;
  
   object = LSMessageGetPayloadJSON(message);
@@ -55,8 +84,8 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   json_get_int(object, "delay", &delay);
   json_get_int(object, "period", &period);
 
-  syslog(LOG_INFO, "useDefault %d, delay %d, period %d\n", use_default, delay, period);
-  if (!use_default && (delay < 0 || period < 0 || delay > 3000 || period > 3000)) {
+  syslog(LOG_DEBUG, "useDefault %d, delay %d, period %d\n", use_default, delay, period);
+  if (!use_default && (delay < 0 || delay > 3000) && (period < 0 || period > 3000)) {
     LSMessageRespond(message, 
         "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Bad paramater\"}", &lserror);
   }
@@ -71,40 +100,78 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
-bool remove_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
+bool change_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
   json_t *object;
-  char *param_trigger;
-  char *param_action;
+  char *param_trigger = NULL;
+  char *param_action = NULL;
+  int param_index = -1;
   ACTIONS action;
   int ret = 0;
 
   object = LSMessageGetPayloadJSON(message);
   json_get_string(object, "trigger", &param_trigger);
+  json_get_int(object, "index", &param_index);
   json_get_string(object, "action", &param_action);
 
-  if (!param_trigger || !param_action)
+  if (!param_trigger || !param_action || param_index < 0)
     goto err;
 
-  if (!strcmp(param_action, "function"))
-    action = ACTION_FUNCTION;
-  else if (!strcmp(param_action, "capitalize"))
-    action = ACTION_CAPITALIZE;
-  else
+  action = get_action_code(param_action);
+  if (action == ACTION_NONE)
     goto err;
 
   if (!strcmp(param_trigger, "tap"))
-    ret = remove_tap_action(action);
+    ret = change_tap_action(param_index, action);
   else if (!strcmp(param_trigger, "hold"))
-    ret = remove_hold_action(action);
+    ret = change_hold_action(param_index, action);
 
   LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
 
   return true;
 
 err:
-  LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Invalid or missing trigger/action\"}", &lserror);
+  LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Invalid or missing trigger/index/action\"}", &lserror);
+
+  return true;
+}
+bool remove_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  json_t *object;
+  char *param_trigger = NULL;
+  char *param_action = NULL;
+  int param_index = -1;
+  ACTIONS action;
+  int ret = 0;
+
+  object = LSMessageGetPayloadJSON(message);
+  json_get_string(object, "trigger", &param_trigger);
+  json_get_int(object, "index", &param_index);
+  json_get_string(object, "action", &param_action);
+
+  if (!param_trigger || (!param_action && param_index < 0))
+    goto err;
+
+  if (param_action) {
+    syslog(LOG_DEBUG, "param action %s\n", param_action);
+    action = get_action_code(param_action);
+    if (action == ACTION_NONE)
+      goto err;
+  }
+
+  if (!strcmp(param_trigger, "tap"))
+    ret = remove_tap_action(action, param_index);
+  else if (!strcmp(param_trigger, "hold"))
+    ret = remove_hold_action(action, param_index);
+
+  LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
+
+  return true;
+
+err:
+  LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Invalid or missing trigger/index/action\"}", &lserror);
 
   return true;
 }
@@ -112,8 +179,8 @@ bool install_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
   json_t *object;
-  char *param_trigger;
-  char *param_action;
+  char *param_trigger = NULL;
+  char *param_action = NULL;
   ACTIONS action;
   int ret = 0;
 
@@ -124,11 +191,8 @@ bool install_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   if (!param_trigger || !param_action)
     goto err;
 
-  if (!strcmp(param_action, "function"))
-    action = ACTION_FUNCTION;
-  else if (!strcmp(param_action, "capitalize"))
-    action = ACTION_CAPITALIZE;
-  else
+  action = get_action_code(param_action);
+  if (action == ACTION_NONE)
     goto err;
 
   if (!strcmp(param_trigger, "tap"))
@@ -155,7 +219,7 @@ bool set_tap_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   object = LSMessageGetPayloadJSON(message);
   json_get_int(object, "timeout", &timeout);
 
-  syslog(LOG_INFO, "set tap timeout: %dms", timeout);
+  syslog(LOG_DEBUG, "set tap timeout: %dms", timeout);
   if (timeout < 0 || timeout > 2000) {
     LSMessageRespond(message, 
         "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Bad paramater\"}", &lserror);
@@ -172,8 +236,8 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
   json_t *object;
-  char *hold;
-  char *doubletap;
+  char *hold = NULL;
+  char *doubletap = NULL;
 
   object = LSMessageGetPayloadJSON(message);
   json_get_string(object, "hold", &hold);
@@ -228,18 +292,53 @@ bool set_prox_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
 bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
+  int i;
+  int count = 0;
   char *sysfs_path = "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout";
   FILE *fd;
   int prox_timeout = -1;
   char buffer[4];
+  struct key_modifier *hold = &keystate.hold;
+  struct key_modifier *tap = &keystate.tap;
+  char *actions = NULL;
+  char *installed_hold = NULL;
+  char *installed_tap = NULL;
 
   fd = fopen(sysfs_path, "w");
   if (fd)
     fclose(fd);
 
+  count = 0;
+  asprintf(&actions, "[");
+  for (i=0; i<MAX_ACTIONS; i++) {
+    if (available_actions[i].name[0]) {
+      if (count++) 
+        asprintf(&actions, "%s,", actions);
+      asprintf(&actions, "%s\"%s\"", actions, available_actions[i].name);
+    }
+  }
+  asprintf(&actions, "%s]", actions);
+
+  count = 0;
+  asprintf(&installed_hold, "[");
+  for (i=0; i<hold->num_active; i++) {
+    if (count++) 
+      asprintf(&installed_hold, "%s,", installed_hold);
+    asprintf(&installed_hold, "%s%d", hold->actions[i], installed_hold);
+  }
+  asprintf(&installed_hold, "%s]", installed_hold);
+
+  count = 0;
+  asprintf(&installed_tap, "[");
+  for (i=0; i<tap->num_active; i++) {
+    if (count++) 
+      asprintf(&installed_tap, "%s,", installed_tap);
+    asprintf(&installed_tap, "%s%d", tap->actions[i], installed_tap);
+  }
+  asprintf(&installed_tap, "%s]", installed_tap);
+
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, \"prox_timeout\": %d}", 
-      u_fd, k_fd, prox_timeout);
+  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, max_actions: %d, actions: %s, installed_hold: %s, installed_tap: %s, \"prox_timeout\": %d}", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, prox_timeout);
 
   LSMessageRespond(message, message_buf, &lserror);
 
@@ -254,6 +353,7 @@ LSMethod luna_methods[] = {
   {"setModifiers", set_modifiers},
   {"installAction", install_action},
   {"removeAction", remove_action},
+  {"changeAction", change_action},
   {"setTapTimeout", set_tap_timeout},
   {"setProxTimeout", set_prox_timeout},
   {0,0}

@@ -99,40 +99,8 @@ static int modifiable(__u16 code) {
   }
 }
 
-#define MAX_ACTIONS 8
-
-struct action_timer {
-  timer_t timerid;
-  struct itimerspec value;
-  struct sigevent evp;
-};
-
-struct action_timer tap_timer;
-
-struct key_modifier {
-  int count;
-  int num_active;
-  int actions[MAX_ACTIONS];
-};
-
-typedef struct {
-  int state;
-  __u16 code;
-  struct key_modifier tap;
-  struct key_modifier hold;
-} KEYSTATE;
-
 KEYSTATE keystate;
-#define KEYUP   0
-#define KEYDOWN 1
-#define KEYHOLD 2
-#define KEYQ_SIZE 8
-
-enum {
-  STATE_IDLE,
-  STATE_TAP
-};
-
+struct action_timer tap_timer;
 struct input_event key_queue[KEYQ_SIZE];
 
 static int stop_tap() {
@@ -151,9 +119,9 @@ static int flush_queue(ACTIONS action) {
       syslog(LOG_INFO, "action cap");
       action_capitalize(key_queue[0].code);
       break;
-    //case ACTION_STOCK:
-      //send_key(key_queue[0].code, KEYDOWN);
-      //break;
+    case ACTION_DEFAULT:
+      send_key(key_queue[0].code, KEYDOWN);
+      break;
     default:
       break;
   }
@@ -161,7 +129,7 @@ static int flush_queue(ACTIONS action) {
   // Now zero out the queue
   for (i=0; i<KEYQ_SIZE; i++) {
     if (key_queue[i].code) {
-      if (action == ACTION_DEFAULT) 
+      if (action == ACTION_NONE) 
         send_key(key_queue[i].code, key_queue[i].value); 
       key_queue[i].code = 0; 
       key_queue[i].value = 0; 
@@ -185,23 +153,41 @@ void tap_timeout(union sigval sig) {
   keystate.state = STATE_IDLE;
 }
 
-int remove_hold_action(ACTIONS action) {
-  int i, j;
+int change_hold_action(int index, ACTIONS action) {
+  struct key_modifier *hold = &keystate.hold;
+
+  if (index < 0 || index >= hold->num_active)
+   return -1;
+
+ hold->actions[index] = action; 
+}
+
+int remove_hold_action(ACTIONS action, int index) {
+  int i, j, ix;
 
   struct key_modifier *hold = &keystate.hold;
 
-  for (i=0; i<hold->num_active; i++) {
-    if (hold->actions[i] == action) {
-      for (j=i+1; j<hold->num_active; j++) {
-        hold->actions[j-1] = hold->actions[j];
+  if (index >= 0)
+    ix = index;
+  else {
+    for (i=0; i<hold->num_active; i++) {
+      if (hold->actions[i] = action) {
+        ix = i;
       }
-      hold->actions[j-1] = ACTION_NONE;
-      hold->num_active--;
-      return 0;
     }
   }
 
-  return -1;
+  if (ix < 0 || ix >= hold->num_active)
+    return -1;
+
+  for (j=ix+1; j<hold->num_active; j++) { 
+    hold->actions[j-1] = hold->actions[j]; 
+  } 
+
+  hold->actions[j-1] = ACTION_NONE; 
+  hold->num_active--; 
+
+  return 0;
 }
 
 int install_hold_action(ACTIONS action) {
@@ -214,6 +200,15 @@ int install_hold_action(ACTIONS action) {
   hold->actions[hold->num_active++] = action;
 
   return 0;
+}
+
+int change_tap_action(int index, ACTIONS action) {
+  struct key_modifier *tap = &keystate.tap;
+
+  if (index < 0 || index >= tap->num_active)
+   return -1;
+
+ tap->actions[index] = action; 
 }
 
 int remove_tap_action(ACTIONS action) {
@@ -259,7 +254,7 @@ static int hold_action() {
     syslog(LOG_INFO, "num %d, count %d\n", hold->count, hold->num_active);
   }
   else {
-    flush_queue(ACTION_DEFAULT);
+    flush_queue(ACTION_NONE);
   }
 }
 
@@ -274,7 +269,7 @@ static int tap_action() {
     tap->count = (tap->count + 1) % tap->num_active;
   }
   else {
-    flush_queue(ACTION_DEFAULT);
+    flush_queue(ACTION_NONE);
   }
 }
 
@@ -282,7 +277,7 @@ static int add_key_to_queue(__u16 code, __s32 value) {
   int i;
 
   if (key_queue[KEYQ_SIZE - 1].code)
-    flush_queue(ACTION_DEFAULT);
+    flush_queue(ACTION_NONE);
 
   for (i=0; i<KEYQ_SIZE; i++) { 
     if (!key_queue[i].code) { 
@@ -323,7 +318,7 @@ static int process_event(struct input_event *event) {
   add_key_to_queue(event->code, event->value);
 
   if (!modifiable(event->code)) {
-    flush_queue(ACTION_DEFAULT);
+    flush_queue(ACTION_NONE);
     keystate.code = event->code;
     return 0;
   }
@@ -334,13 +329,13 @@ static int process_event(struct input_event *event) {
         tap_action();
       }  
       else {
-        flush_queue(ACTION_DEFAULT);
+        flush_queue(ACTION_NONE);
         start_timeout();
       }
       break;
     case KEYUP:
       if (keystate.code != event->code) {
-        flush_queue(ACTION_DEFAULT);
+        flush_queue(ACTION_NONE);
         stop_tap();
       }
       break;

@@ -15,11 +15,49 @@
 
   <div class="palm-group">
     <div class="palm-group-title">
+      <span x-mojo-loc=''>Hold Timings</span>
+    </div>
+
+    <div class="palm-list">
+      <div id="delaySliderRow" class="palm-row first">
+        <div class="palm-row-wrapper">
+					<div class="title" x-mojo-loc=''>Initial Delay</div>
+          <div x-mojo-element="Slider" id="delaySlider" class="palm-slider">
+          </div>
+        </div>
+      </div>
+
+      <div id="freqSliderRow" class="palm-row">
+        <div class="palm-row-wrapper">
+					<div class="title" x-mojo-loc=''>Subsequent Interval</div>
+          <div x-mojo-element="Slider" id="freqSlider" class="palm-slider">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="palm-group">
+    <div class="palm-group-title">
       <span x-mojo-loc=''>Tap Actions</span>
     </div>
     <div class="palm-list" id="tapList" x-mojo-element="List">
     </div>
   </div>
+
+  <div class="palm-group">
+    <div class="palm-group-title">
+      <span x-mojo-loc=''>Tap Timings</span>
+    </div>
+
+    <div class="palm-list">
+      <div id="tapTimeoutRow" class="palm-row single">
+        <div class="palm-row-wrapper">
+					<div class="title" x-mojo-loc=''>Tap Timeout</div>
+          <div x-mojo-element="Slider" id="tapSlider" class="palm-slider">
+          </div>
+        </div>
+      </div>
 
 <!--
   <div class="palm-group">

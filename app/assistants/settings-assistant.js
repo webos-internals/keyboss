@@ -2,13 +2,19 @@ function SettingsAssistant() {
   this.holdList = false;
   this.holdListData = [];
   this.holdListCount = 0;
+  this.holdListLoading = true;
   this.tapList = false;
   this.tapListData = [];
   this.tapListCount = 0;
 
+  this.loadingActions = true;
+  this.actions = [];
+  this.maxActions = 0;
+
   this.cookie = new preferenceCookie();
   this.prefs = this.cookie.get();
 
+  /*
   if (this.prefs.holdactions && this.prefs.holdactions.length > 0) {
     for (var i = 0; i < this.prefs.holdactions.length; i++) {
       this.holdListCount++;
@@ -22,6 +28,7 @@ function SettingsAssistant() {
       this.tapListData.push({id: this.tapListCount, index: i, value: this.prefs.tapactions[i]});
     }
   }
+  */
 }
 
 SettingsAssistant.prototype.setup = function() {
@@ -37,36 +44,16 @@ SettingsAssistant.prototype.setup = function() {
 
   this.freqAttributes = {
     modelProperty: 'value',
-    maxValue: 90,
+    maxValue: 1000,
     minValue: 0,
     round: false,
-    updateInterval: 5
-  }
-
-  this.textAttributes = {
-    multiline: false,
-    enterSubmits: false,
-    hintText: '',
-    maxLength: 100,
-    textCase: Mojo.Widget.steModeLowerCase,
-    focusMode: Mojo.Widget.focusInsertMode
-  }
-
-  this.toggleAttributes = {
-    trueValue: "on",
-    falseValue: "off",
-    modelProperty: 'value',
-    enabledProp: 'disabled'
-  }
-
-  this.toggleModel = {
-    value: false,
+    updateInterval: 10
   }
 
   this.actionsAttributes = {
     itemTemplate: "settings/actions-row",
     swipeToDelete: true,
-    reorderable: true,
+    reorderable: false,
     addItemLabel: 'Add',
 
     multiline: false,
@@ -86,54 +73,30 @@ SettingsAssistant.prototype.setup = function() {
   this.tapList = this.controller.get('tapList');
   this.freqSlider = this.controller.get('freqSlider');
   this.delaySlider = this.controller.get('delaySlider');
-  this.defaultButton = this.controller.get('defaultButton');
-  this.preview = this.controller.get('preview');
-
-  this.holdListBuildList();
-  this.tapListBuildList();
+  this.tapSlider = this.controller.get('tapSlider');
 
 	/* setup widgets here */
 
-  this.tmpAttr = {
-label: "Action",
-       multiline: false,
-choices: [ {label: "Function", value: 1},
-         {label: "Capitalize", value: 2} ]};
-  this.tmpModel = {value: 2, disabled: false};
+  //TODO: get default from service
   this.delayModel = {value: 500};
-  this.freqModel = {value: 10};
+  this.freqModel = {value: 100};
 
-  this.controller.setupWidget('delaySlider', this.delayAttributes, 
-      this.delayModel);
-  this.controller.setupWidget('freqSlider', this.freqAttributes, 
-      this.freqModel);
-  this.controller.setupWidget('preview', this.textAttributes, {});
-  this.controller.setupWidget('defaultButton', {}, {buttonLabel: 'Reset'});
-  this.controller.setupWidget('holdToggle', this.toggleAttributes, 
-      this.toggleModel);
-  this.controller.setupWidget('doubleToggle', this.toggleAttributes, 
-      this.toggleModel);
+  this.controller.setupWidget('delaySlider', this.delayAttributes, this.delayModel);
+  this.controller.setupWidget('freqSlider', this.freqAttributes, this.freqModel);
+  this.controller.setupWidget('tapSlider', this.tapAttributes, this.tapModel);
   this.controller.setupWidget('holdList', this.actionsAttributes, this.holdListModel);
   this.controller.setupWidget('tapList', this.actionsAttributes, this.tapListModel);
-  this.controller.setupWidget('actionsField', this.tmpAttr, this.tmpModel);
 
 	/* add event handlers to listen to events from widgets */
   this.handleRateChange = this.rateChange.bindAsEventListener(this);
-  this.controller.listen(this.controller.sceneElement, Mojo.Event.keydown, this.keyDown.bind(this));
+  this.handleTapTimeoutChange = this.tapTimeoutChange.bindAsEventListener(this);
 
-  if (this.delaySlider)
-    Mojo.Event.listen(this.delaySlider, 'mojo-property-change', this.handleRateChange);
-  if (this.freqSlider)
-    Mojo.Event.listen(this.freqSlider, 'mojo-property-change', this.handleRateChange);
-  if (this.defaultButton)
-    Mojo.Event.listen(this.defaultButton, Mojo.Event.tap, this.setRateDefault.bindAsEventListener(this));
+  this.holdListFinishAdd = this.holdListFinishAdd.bind(this);
+  this.holdListFinishChange = this.holdListFinishChange.bind(this);
 
-  if ($('holdToggle'))
-    $('holdToggle').observe('mojo-property-change', this.toggleHold.bindAsEventListener());
-  if ($('doubleToggle')) 
-    $('doubleToggle').observe('mojo-property-change', this.toggleDouble.bindAsEventListener());
-
-  service.getStatus(this.handleStatus.bind(this));
+  Mojo.Event.listen(this.delaySlider, 'mojo-property-change', this.handleRateChange);
+  Mojo.Event.listen(this.freqSlider, 'mojo-property-change', this.handleRateChange);
+  Mojo.Event.listen(this.tapSlider, 'mojo-property-change', this.handleTapTimeoutChange);
   Mojo.Event.listen(this.holdList, Mojo.Event.listAdd, this.holdListAdd.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.propertyChanged,	this.holdListChange.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.listReorder,		this.holdListReorder.bindAsEventListener(this));
@@ -143,11 +106,44 @@ choices: [ {label: "Function", value: 1},
   Mojo.Event.listen(this.tapList, Mojo.Event.propertyChanged,	this.tapListChange.bindAsEventListener(this));
   Mojo.Event.listen(this.tapList, Mojo.Event.listReorder,		this.tapListReorder.bindAsEventListener(this));
   Mojo.Event.listen(this.tapList, Mojo.Event.listDelete,			this.tapListDelete.bindAsEventListener(this));
+  service.getStatus(this.handleStatus.bind(this));
 };
 
-SettingsAssistant.prototype.holdListChange = function(event)
+SettingsAssistant.prototype.setupActionWidgets = function(payload)
 {
-	this.holdListSave();
+  var choices = [];
+
+  for (var i=0; i<this.maxActions; i++) {
+    if (this.actions[i])
+      choices.push({label: this.actions[i], value: i});
+  }
+
+  var attributes = {
+    label: "Action", 
+    multiline: false, 
+    choices: choices
+  };
+
+  var model = {value: 0, disabled: false};
+
+  this.holdListBuildList();
+  this.tapListBuildList();
+
+  this.controller.setupWidget('actionsField', attributes, model);
+}
+
+SettingsAssistant.prototype.holdListFinishChange = function(payload)
+{
+  if (payload.returnValue)
+	  this.holdListSave();
+  else
+    Mojo.Log.error(payload.errorText);
+}
+
+SettingsAssistant.prototype.holdListChange = function(event) {
+  var index = event.model.index;
+
+  service.changeAction(this.holdListFinishChange, 'hold', index, this.actions[event.value]);
 }
 
 SettingsAssistant.prototype.holdListReorder = function(event)
@@ -181,41 +177,53 @@ SettingsAssistant.prototype.holdListReorder = function(event)
 	this.holdListSave();
 }
 
+SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
+{
+  Mojo.Log.error("payload " + payload);
+  Mojo.Log.error("id " + id);
+  Mojo.Log.error("index " + index);
+
+  if (payload.returnValue) {
+	  var newData = [];
+    this.holdListCount--;
+	  if (this.holdListData.length > 0) 
+	  {
+		  for (var d = 0; d < this.holdListData.length; d++) 
+		  {
+			  if (this.holdListData[d].id == id) 
+			  {
+				  // ignore
+			  }
+			  else 
+			  {
+				  if (this.holdListData[d].index > index) 
+				  {
+					  this.holdListData[d].index--;
+				  }
+				  newData.push(this.holdListData[d]);
+			  }
+		  }
+	  }
+	  this.holdListData = newData;
+	  this.holdListSave();
+  }
+  else {
+    Mojo.Log.error(payload.errorText);
+  }
+}
+
 SettingsAssistant.prototype.holdListDelete = function(event)
 {
-	var newData = [];
-  this.holdListCount--;
-	if (this.holdListData.length > 0) 
-	{
-		for (var d = 0; d < this.holdListData.length; d++) 
-		{
-			if (this.holdListData[d].id == event.item.id) 
-			{
-				// ignore
-			}
-			else 
-			{
-				if (this.holdListData[d].index > event.index) 
-				{
-					this.holdListData[d].index--;
-				}
-				newData.push(this.holdListData[d]);
-			}
-		}
-	}
-	this.holdListData = newData;
-	this.holdListSave();
+  service.removeAction(this.holdListFinishDelete.bind(this,event.item.id,event.index), 'hold', event.index);
 }
 
 SettingsAssistant.prototype.holdListSave = function()
 {
-  Mojo.Log.error("SAVING LIST");
+  return;
 	if (this.holdListData.length > 0) 
 	{
-    Mojo.Log.error("1");
 		if (this.holdListData.length > 1) 
 		{
-    Mojo.Log.error("2");
 			this.holdListData.sort(function(a, b)
 			{
 				return a.index - b.index;
@@ -224,13 +232,10 @@ SettingsAssistant.prototype.holdListSave = function()
 		
 		for (var i = 0; i < this.holdListModel.items.length; i++) 
 		{
-    Mojo.Log.error("3");
 			for (var d = 0; d < this.holdListData.length; d++) 
 			{
-    Mojo.Log.error("4");
 				if (this.holdListData[d].id == this.holdListModel.items[i].id) 
 				{
-    Mojo.Log.error("5");
 					this.holdListData[d].value = this.holdListModel.items[i].value;
 				}
 			}
@@ -262,16 +267,26 @@ SettingsAssistant.prototype.holdListBuildList = function() {
   }
 };
 
+SettingsAssistant.prototype.holdListFinishAdd = function(payload) {
+  if (payload.returnValue) {
+    this.holdListCount++;
+    this.holdListData.push({id: this.holdListCount, index: this.holdListData.length, value: 0});
+    this.holdListBuildList();
+    this.holdList.mojo.noticeUpdatedItems(0, this.holdListModel.items);
+    this.holdList.mojo.setLength(this.holdListModel.items.length);
+    //this.holdList.mojo.focusItem(this.holdListModel.items[this.holdListModel.items.length-1]);
+    this.holdListSave();
+  }
+  else {
+    Mojo.Log.error(payload.errorText);
+  }
+}
+
 SettingsAssistant.prototype.holdListAdd = function(event) {
-  if (this.holdListCount >= 2)
+  if (this.holdListCount >= 2 || this.loadingActions)
     return;
-  this.holdListCount++;
-  this.holdListData.push({id: this.holdListCount, index: this.holdListData.length, value: ''});
-  this.holdListBuildList();
-  this.holdList.mojo.noticeUpdatedItems(0, this.holdListModel.items);
-  this.holdList.mojo.setLength(this.holdListModel.items.length);
-  //this.holdList.mojo.focusItem(this.holdListModel.items[this.holdListModel.items.length-1]);
-  this.holdListSave();
+
+  service.installAction(this.holdListFinishAdd, 'hold', this.actions[0]);
 };
 
 SettingsAssistant.prototype.tapListChange = function(event)
@@ -338,6 +353,7 @@ SettingsAssistant.prototype.tapListDelete = function(event)
 
 SettingsAssistant.prototype.tapListSave = function()
 {
+  return;
 	if (this.tapListData.length > 0) 
 	{
 		if (this.tapListData.length > 1) 
@@ -386,7 +402,7 @@ SettingsAssistant.prototype.tapListBuildList = function() {
 };
 
 SettingsAssistant.prototype.tapListAdd = function(event) {
-  if (this.tapListCount >= 2)
+  if (this.tapListCount >= 2 || this.loadingActions)
     return;
   this.tapListCount++;
   this.tapListData.push({id: this.tapListCount, index: this.tapListData.length, value: ''});
@@ -424,17 +440,29 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
   }
   else if (payload.u_fd < 0) {
     this.showError("Service reports uinput device cannot be opened.  The uinput module is required for KeyCaps functionality and keyboard emulation.  If you would like to use these functionalities, please make sure the Uinput module is installed via Preware and reboot.");
-    this.toggleModel.disabled = true;
-    this.controller.modelChanged(this.toggleModel, this);
   }
-}
+  else {
+    this.actions = payload.actions.clone();
+    this.maxActions = payload.max_actions;
+    Mojo.Log.error("actions " + this.actions);
 
-SettingsAssistant.prototype.toggleHold = function(event) {
-  service.setModifiers(this.callback, event.value, 0);
-}
+    if (payload.installed_hold && payload.installed_hold.length > 0) {
+      for (var i = 0; i < payload.installed_hold.length; i++) {
+        this.holdListCount++;
+        this.holdListData.push({id: this.holdListCount, index: i, value: payload.installed_hold[i]});
+      }
+    }
 
-SettingsAssistant.prototype.toggleDouble = function(event) {
-  service.setModifiers(this.callback, 0, event.value);
+    if (payload.installed_tap && payload.installed_tap.length > 0) {
+      for (var i = 0; i < payload.installed_tap.length; i++) {
+        this.tapListCount++;
+        this.tapListData.push({id: this.tapListCount, index: i, value: payload.installed_tap[i]});
+      }
+    }
+
+    this.setupActionWidgets();
+    this.loadingActions = false;
+  }
 }
 
 SettingsAssistant.prototype.callback = function(payload) {
@@ -449,29 +477,28 @@ SettingsAssistant.prototype.handleGet = function(payload) {
   }
 
   this.delayModel.value = payload.delay;
-  this.freqModel.value = Math.floor(1000/payload.period);
+  this.freqModel.value = Math.floor(payload.period);
   this.controller.modelChanged(this.delayModel, this);
   this.controller.modelChanged(this.freqModel, this);
 }
 
-SettingsAssistant.prototype.keyDown = function(event) {
-  if (this.preview)
-    this.preview.mojo.focus();
-}
-
 SettingsAssistant.prototype.setRateDefault = function(event) {
   this.delayModel.value = 500
-  this.freqModel.value = 10;
+  this.freqModel.value = 100;
   this.controller.modelChanged(this.delayModel, this);
   this.controller.modelChanged(this.freqModel, this);
   service.setRepeatRate(this.callback, -1, -1, true);
   service.getRepeatRate(this.handleGet.bind(this));
 }
 
+SettingsAssistant.prototype.tapTimeoutChange = function(event) {
+  service.setTapTimeout(this.callback, event.value);
+}
+
 SettingsAssistant.prototype.rateChange = function(event) {
   Mojo.Log.error("value " + event.value);
   if (event.target === this.freqSlider)
-    service.setRepeatRate(this.callback, -1, Math.floor(1000/event.value), false);
+    service.setRepeatRate(this.callback, -1, Math.floor(event.value), false);
   else if (event.target === this.delaySlider)
     service.setRepeatRate(this.callback, Math.floor(event.value), -1, false);
 }
