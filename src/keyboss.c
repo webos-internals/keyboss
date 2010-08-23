@@ -141,10 +141,12 @@ void tap_timeout(union sigval sig) {
   syslog(LOG_INFO, "tap timeout");
   switch (keystate.state) {
     case STATE_TAP:
+      syslog(LOG_INFO, "send up");
       send_key(keystate.code, KEYUP);
       stop_tap();
       break;
     default:
+      syslog(LOG_INFO, "flush");
       flush_queue(ACTION_DEFAULT);
       stop_tap();
       break;
@@ -208,6 +210,7 @@ int change_tap_action(int index, ACTIONS action) {
   if (index < 0 || index >= tap->num_active)
    return -1;
 
+  syslog(LOG_DEBUG, "change tap action %d to %d\n", index, action);
  tap->actions[index] = action; 
 }
 
@@ -236,6 +239,7 @@ int install_tap_action(ACTIONS action) {
   if (tap->num_active >= MAX_ACTIONS)
     return -1;
 
+  syslog(LOG_DEBUG, "installed tap action %d\n", action);
   tap->actions[tap->num_active++] = action;
 
   return 0;
@@ -265,6 +269,7 @@ static int tap_action() {
     keystate.state = STATE_TAP;
     send_key(KEY_BACKSPACE, KEYDOWN);
     send_key(KEY_BACKSPACE, KEYUP);
+    send_key(keystate.code, KEYUP);
     flush_queue(tap->actions[tap->count]);
     tap->count = (tap->count + 1) % tap->num_active;
   }
@@ -292,6 +297,9 @@ static int add_key_to_queue(__u16 code, __s32 value) {
 
 // set timeout in ms
 int set_tap_timeout_ms(int ms) {
+  syslog(LOG_DEBUG, "set tap timeout %d ms", ms);
+  syslog(LOG_DEBUG, "tv_sec %d", ms / 1000);
+  syslog(LOG_DEBUG, "tv_nsec %d", (ms % 1000) * 1000000);
   tap_timer.value.it_value.tv_sec = ms / 1000;
   tap_timer.value.it_value.tv_nsec = (ms % 1000) * 1000000;
 }
@@ -303,11 +311,12 @@ static int initialize() {
   tap_timer.evp.sigev_notify = SIGEV_THREAD;
   tap_timer.evp.sigev_notify_function = tap_timeout;
   tap_timer.value.it_value.tv_sec = 0;
-  tap_timer.value.it_value.tv_nsec = DEFAULT_PERIOD * 1000000;
+  tap_timer.value.it_value.tv_nsec = DEFAULT_TIMEOUT * 1000000;
   timer_create(CLOCK_REALTIME, &tap_timer.evp, &tap_timer.timerid);
 }
 
 static int start_timeout() {
+  syslog(LOG_DEBUG, "start timeout");
   timer_settime(&tap_timer.timerid, 0, &tap_timer.value, NULL);
 }
 
@@ -325,6 +334,7 @@ static int process_event(struct input_event *event) {
 
   switch (event->value) {
     case KEYDOWN:
+      syslog(LOG_DEBUG, "saved code %d, this code %d\n", keystate.code, event->code);
       if (keystate.code == event->code) {
         tap_action();
       }  
@@ -341,6 +351,7 @@ static int process_event(struct input_event *event) {
       break;
     case KEYHOLD:
       stop_tap();
+      syslog(LOG_INFO, "hold action");
       hold_action();
       break;
     default:

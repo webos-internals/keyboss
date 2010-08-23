@@ -23,6 +23,7 @@
  */
 #define DEFAULT_DELAY  (500)
 #define DEFAULT_PERIOD (100)
+#define DEFAULT_TIMEOUT (250)
 
 #define MAX_ACTIONS (8)
 
@@ -32,7 +33,7 @@
 #define KEYQ_SIZE 8
 
 typedef enum { 
-  ACTION_NONE, 
+  ACTION_NONE = -1, 
   ACTION_DEFAULT, 
   ACTION_FUNCTION, 
   ACTION_CAPITALIZE

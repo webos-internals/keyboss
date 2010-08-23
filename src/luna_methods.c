@@ -10,7 +10,7 @@ struct action_map {
   char name[16];
 };
 
-static char message_buf[1024];
+static char message_buf[4048];
 static char tmp[256];
 
 static struct action_map available_actions[MAX_ACTIONS] = {
@@ -26,6 +26,9 @@ static struct action_map available_actions[MAX_ACTIONS] = {
 
 static get_action_code(char *name) {
   int i;
+
+  if (!name)
+    return ACTION_NONE;
 
   for (i=0; i<MAX_ACTIONS; i++) {
     if (available_actions[i].name[0] && !strcmp(available_actions[i].name, name)) {
@@ -119,7 +122,7 @@ bool change_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
     goto err;
 
   action = get_action_code(param_action);
-  if (action == ACTION_NONE)
+  if (action < ACTION_DEFAULT )
     goto err;
 
   if (!strcmp(param_trigger, "tap"))
@@ -157,7 +160,7 @@ bool remove_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   if (param_action) {
     syslog(LOG_DEBUG, "param action %s\n", param_action);
     action = get_action_code(param_action);
-    if (action == ACTION_NONE)
+    if (action < ACTION_DEFAULT)
       goto err;
   }
 
@@ -181,7 +184,7 @@ bool install_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   json_t *object;
   char *param_trigger = NULL;
   char *param_action = NULL;
-  ACTIONS action;
+  ACTIONS action = ACTION_NONE;
   int ret = 0;
 
   object = LSMessageGetPayloadJSON(message);
@@ -192,7 +195,7 @@ bool install_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
     goto err;
 
   action = get_action_code(param_action);
-  if (action == ACTION_NONE)
+  if (action < ACTION_DEFAULT)
     goto err;
 
   if (!strcmp(param_trigger, "tap"))
@@ -304,10 +307,12 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   char *installed_hold = NULL;
   char *installed_tap = NULL;
 
+  syslog(LOG_DEBUG, "in get status");
   fd = fopen(sysfs_path, "w");
   if (fd)
     fclose(fd);
 
+  syslog(LOG_DEBUG, "get actions");
   count = 0;
   asprintf(&actions, "[");
   for (i=0; i<MAX_ACTIONS; i++) {
@@ -319,21 +324,25 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   }
   asprintf(&actions, "%s]", actions);
 
+  syslog(LOG_DEBUG, "get installed_hold");
   count = 0;
   asprintf(&installed_hold, "[");
+  syslog(LOG_DEBUG, "hold %p", hold);
   for (i=0; i<hold->num_active; i++) {
+    syslog(LOG_DEBUG, "i %d", i);
     if (count++) 
       asprintf(&installed_hold, "%s,", installed_hold);
-    asprintf(&installed_hold, "%s%d", hold->actions[i], installed_hold);
+    asprintf(&installed_hold, "%s%d", installed_hold, hold->actions[i]);
   }
   asprintf(&installed_hold, "%s]", installed_hold);
 
+  syslog(LOG_DEBUG, "get installed_tap");
   count = 0;
   asprintf(&installed_tap, "[");
   for (i=0; i<tap->num_active; i++) {
     if (count++) 
       asprintf(&installed_tap, "%s,", installed_tap);
-    asprintf(&installed_tap, "%s%d", tap->actions[i], installed_tap);
+    asprintf(&installed_tap, "%s%d", installed_tap, tap->actions[i]);
   }
   asprintf(&installed_tap, "%s]", installed_tap);
 
@@ -341,6 +350,9 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, max_actions: %d, actions: %s, installed_hold: %s, installed_tap: %s, \"prox_timeout\": %d}", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, prox_timeout);
 
   LSMessageRespond(message, message_buf, &lserror);
+  if (actions) free(actions);
+  if (installed_hold) free(installed_hold);
+  if (installed_tap) free(installed_tap);
 
   return true;
 }

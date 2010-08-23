@@ -2,7 +2,6 @@ function SettingsAssistant() {
   this.holdList = false;
   this.holdListData = [];
   this.holdListCount = 0;
-  this.holdListLoading = true;
   this.tapList = false;
   this.tapListData = [];
   this.tapListCount = 0;
@@ -13,41 +12,17 @@ function SettingsAssistant() {
 
   this.cookie = new preferenceCookie();
   this.prefs = this.cookie.get();
-
-  /*
-  if (this.prefs.holdactions && this.prefs.holdactions.length > 0) {
-    for (var i = 0; i < this.prefs.holdactions.length; i++) {
-      this.holdListCount++;
-      this.holdListData.push({id: this.holdListCount, index: i, value: this.prefs.holdactions[i]});
-    }
-  }
-
-  if (this.prefs.tapactions && this.prefs.tapactions.length > 0) {
-    for (var i = 0; i < this.prefs.tapactions.length; i++) {
-      this.tapListCount++;
-      this.tapListData.push({id: this.tapListCount, index: i, value: this.prefs.tapactions[i]});
-    }
-  }
-  */
 }
 
 SettingsAssistant.prototype.setup = function() {
 	/* this function is for setup tasks that have to happen when the scene is first created */
 		
-  this.delayAttributes = {
+  this.sliderAttributes = {
     modelProperty: 'value',
     maxValue: 1000,
     minValue: 0,
     round: false,
-    updateInterval: 10
-  };
-
-  this.freqAttributes = {
-    modelProperty: 'value',
-    maxValue: 1000,
-    minValue: 0,
-    round: false,
-    updateInterval: 10
+    updateInterval: 1
   }
 
   this.actionsAttributes = {
@@ -80,10 +55,11 @@ SettingsAssistant.prototype.setup = function() {
   //TODO: get default from service
   this.delayModel = {value: 500};
   this.freqModel = {value: 100};
+  this.tapModel = {value: 250};
 
-  this.controller.setupWidget('delaySlider', this.delayAttributes, this.delayModel);
-  this.controller.setupWidget('freqSlider', this.freqAttributes, this.freqModel);
-  this.controller.setupWidget('tapSlider', this.tapAttributes, this.tapModel);
+  this.controller.setupWidget('delaySlider', this.sliderAttributes, this.delayModel);
+  this.controller.setupWidget('freqSlider', this.sliderAttributes, this.freqModel);
+  this.controller.setupWidget('tapSlider', this.sliderAttributes, this.tapModel);
   this.controller.setupWidget('holdList', this.actionsAttributes, this.holdListModel);
   this.controller.setupWidget('tapList', this.actionsAttributes, this.tapListModel);
 
@@ -93,18 +69,18 @@ SettingsAssistant.prototype.setup = function() {
 
   this.holdListFinishAdd = this.holdListFinishAdd.bind(this);
   this.holdListFinishChange = this.holdListFinishChange.bind(this);
+  this.tapListFinishAdd = this.tapListFinishAdd.bind(this);
+  this.tapListFinishChange = this.tapListFinishChange.bind(this);
 
   Mojo.Event.listen(this.delaySlider, 'mojo-property-change', this.handleRateChange);
   Mojo.Event.listen(this.freqSlider, 'mojo-property-change', this.handleRateChange);
   Mojo.Event.listen(this.tapSlider, 'mojo-property-change', this.handleTapTimeoutChange);
   Mojo.Event.listen(this.holdList, Mojo.Event.listAdd, this.holdListAdd.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.propertyChanged,	this.holdListChange.bindAsEventListener(this));
-  Mojo.Event.listen(this.holdList, Mojo.Event.listReorder,		this.holdListReorder.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.listDelete,			this.holdListDelete.bindAsEventListener(this));
 
   Mojo.Event.listen(this.tapList, Mojo.Event.listAdd, this.tapListAdd.bindAsEventListener(this));
   Mojo.Event.listen(this.tapList, Mojo.Event.propertyChanged,	this.tapListChange.bindAsEventListener(this));
-  Mojo.Event.listen(this.tapList, Mojo.Event.listReorder,		this.tapListReorder.bindAsEventListener(this));
   Mojo.Event.listen(this.tapList, Mojo.Event.listDelete,			this.tapListDelete.bindAsEventListener(this));
   service.getStatus(this.handleStatus.bind(this));
 };
@@ -130,6 +106,8 @@ SettingsAssistant.prototype.setupActionWidgets = function(payload)
   this.tapListBuildList();
 
   this.controller.setupWidget('actionsField', attributes, model);
+  this.controller.modelChanged(this.holdListModel, this);
+  this.controller.modelChanged(this.tapListModel, this);
 }
 
 SettingsAssistant.prototype.holdListFinishChange = function(payload)
@@ -146,43 +124,8 @@ SettingsAssistant.prototype.holdListChange = function(event) {
   service.changeAction(this.holdListFinishChange, 'hold', index, this.actions[event.value]);
 }
 
-SettingsAssistant.prototype.holdListReorder = function(event)
-{
-	for (var d = 0; d < this.holdListData.length; d++) 
-	{
-		if (this.holdListData[d].index == event.fromIndex) 
-		{
-			this.holdListData[d].index = event.toIndex;
-		}
-		else 
-		{
-			if (event.fromIndex > event.toIndex) 
-			{
-				if (this.holdListData[d].index < event.fromIndex &&
-				this.holdListData[d].index >= event.toIndex) 
-				{
-					this.holdListData[d].index++;
-				}
-			}
-			else if (event.fromIndex < event.toIndex) 
-			{
-				if (this.holdListData[d].index > event.fromIndex &&
-				this.holdListData[d].index <= event.toIndex) 
-				{
-					this.holdListData[d].index--;
-				}
-			}
-		}
-	}
-	this.holdListSave();
-}
-
 SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
 {
-  Mojo.Log.error("payload " + payload);
-  Mojo.Log.error("id " + id);
-  Mojo.Log.error("index " + index);
-
   if (payload.returnValue) {
 	  var newData = [];
     this.holdListCount--;
@@ -283,73 +226,63 @@ SettingsAssistant.prototype.holdListFinishAdd = function(payload) {
 }
 
 SettingsAssistant.prototype.holdListAdd = function(event) {
-  if (this.holdListCount >= 2 || this.loadingActions)
+  if (this.loadingActions || this.holdListCount >= this.maxActions)
     return;
 
   service.installAction(this.holdListFinishAdd, 'hold', this.actions[0]);
 };
 
-SettingsAssistant.prototype.tapListChange = function(event)
+SettingsAssistant.prototype.tapListFinishChange = function(payload)
 {
-	this.tapListSave();
+  if (payload.returnValue)
+	  this.tapListSave();
+  else
+    Mojo.Log.error(payload.errorText);
 }
 
-SettingsAssistant.prototype.tapListReorder = function(event)
+SettingsAssistant.prototype.tapListChange = function(event)
 {
-	for (var d = 0; d < this.tapListData.length; d++) 
-	{
-		if (this.tapListData[d].index == event.fromIndex) 
-		{
-			this.tapListData[d].index = event.toIndex;
-		}
-		else 
-		{
-			if (event.fromIndex > event.toIndex) 
-			{
-				if (this.tapListData[d].index < event.fromIndex &&
-				this.tapListData[d].index >= event.toIndex) 
-				{
-					this.tapListData[d].index++;
-				}
-			}
-			else if (event.fromIndex < event.toIndex) 
-			{
-				if (this.tapListData[d].index > event.fromIndex &&
-				this.tapListData[d].index <= event.toIndex) 
-				{
-					this.tapListData[d].index--;
-				}
-			}
-		}
-	}
-	this.tapListSave();
+  var index = event.model.index;
+
+  service.changeAction(this.tapListFinishChange, 'tap', index, this.actions[event.value]);
+}
+
+SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
+{
+  if (payload.returnValue) {
+	  var newData = [];
+    this.tapListCount--;
+	  if (this.tapListData.length > 0) 
+	  {
+		  for (var d = 0; d < this.tapListData.length; d++) 
+		  {
+			  if (this.tapListData[d].id == id) 
+			  {
+				  // ignore
+			  }
+			  else 
+			  {
+				  if (this.tapListData[d].index > index) 
+				  {
+					  this.tapListData[d].index--;
+				  }
+				  newData.push(this.tapListData[d]);
+			  }
+		  }
+	  }
+	  this.tapListData = newData;
+	  this.tapListSave();
+  }
+  else {
+    Mojo.Log.error(payload.errorText);
+  }
 }
 
 SettingsAssistant.prototype.tapListDelete = function(event)
 {
-	var newData = [];
-  this.tapListCount--;
-	if (this.tapListData.length > 0) 
-	{
-		for (var d = 0; d < this.tapListData.length; d++) 
-		{
-			if (this.tapListData[d].id == event.item.id) 
-			{
-				// ignore
-			}
-			else 
-			{
-				if (this.tapListData[d].index > event.index) 
-				{
-					this.tapListData[d].index--;
-				}
-				newData.push(this.tapListData[d]);
-			}
-		}
-	}
-	this.tapListData = newData;
-	this.tapListSave();
+  service.removeAction(this.tapListFinishDelete.bind(this,event.item.id,event.index), 'tap', event.index);
 }
+
 
 SettingsAssistant.prototype.tapListSave = function()
 {
@@ -401,17 +334,27 @@ SettingsAssistant.prototype.tapListBuildList = function() {
   }
 };
 
-SettingsAssistant.prototype.tapListAdd = function(event) {
-  if (this.tapListCount >= 2 || this.loadingActions)
-    return;
-  this.tapListCount++;
-  this.tapListData.push({id: this.tapListCount, index: this.tapListData.length, value: ''});
-  this.tapListBuildList();
-  this.tapList.mojo.noticeUpdatedItems(0, this.tapListModel.items);
-  this.tapList.mojo.setLength(this.tapListModel.items.length);
-  //this.tapList.mojo.focusItem(this.tapListModel.items[this.tapListModel.items.length-1]);
-  this.tapListSave();
+SettingsAssistant.prototype.tapListFinishAdd = function(payload) {
+  if (payload.returnValue) {
+    this.tapListCount++;
+    this.tapListData.push({id: this.tapListCount, index: this.tapListData.length, value: 0});
+    this.tapListBuildList();
+    this.tapList.mojo.noticeUpdatedItems(0, this.tapListModel.items);
+    this.tapList.mojo.setLength(this.tapListModel.items.length);
+    //this.tapList.mojo.focusItem(this.tapListModel.items[this.tapListModel.items.length-1]);
+    this.tapListSave();
+  }
+  else {
+    Mojo.Log.error(payload.errorText);
+  }
 };
+
+SettingsAssistant.prototype.tapListAdd = function(event) {
+  if (this.loadingActions || this.tapListCount >= this.maxActions)
+    return;
+
+  service.installAction(this.tapListFinishAdd, 'tap', this.actions[0]);
+}
 
 SettingsAssistant.prototype.showError = function(message, callback) {
     this.controller.showAlertDialog(
@@ -433,6 +376,8 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
   if (Mojo.Environment.DeviceInfo.modelNameAscii === "Device")
   return;
   if (!payload || !payload.returnValue) {
+    Mojo.Log.error("handle status error");
+    this.callback(payload);
     this.showError("Service does not seem to be running, try rebooting and then re-install if unsuccessful", this.close.bind(this));
   }
   else if (payload.k_fd < 0) {
@@ -492,11 +437,12 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
 }
 
 SettingsAssistant.prototype.tapTimeoutChange = function(event) {
-  service.setTapTimeout(this.callback, event.value);
+  Mojo.Log.error("tap slider change " + event.value);
+  service.setTapTimeout(this.callback, Math.floor(event.value));
 }
 
 SettingsAssistant.prototype.rateChange = function(event) {
-  Mojo.Log.error("value " + event.value);
+  Mojo.Log.error("rate change value " + event.value);
   if (event.target === this.freqSlider)
     service.setRepeatRate(this.callback, -1, Math.floor(event.value), false);
   else if (event.target === this.delaySlider)
