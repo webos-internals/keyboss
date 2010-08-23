@@ -22,6 +22,15 @@ rm -f /var/usr/sbin/${PID}
 # Remove the upstart script
 rm -f /etc/event.d/${PID} /var/palm/event.d/${PID} /var/palm/event.d/${PID}-settings
 
+# Remove the dummy uinput upstart script
+if [ -f /var/palm/event.d/${UINPUT} ]; then
+  grep "Dummy Script" /var/palm/event.d/${UINPUT} && rm -f /var/palm/event.d/${UINPUT}
+fi
+
+if [ -f /etc/event.d/${UINPUT} ]; then
+  grep "Dummy Script" /etc/event.d/${UINPUT} && rm -f /etc/event.d/${UINPUT}
+fi
+
 # Remove the udev rules file
 rm -f /etc/udev/rules.d/49-${PID}.rules
 

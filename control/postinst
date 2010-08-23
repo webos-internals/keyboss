@@ -1,6 +1,7 @@
 #!/bin/sh
 
 PID="org.webosinternals.keyboss"
+UINPUT="org.webosinternals.modules.uinput"
 
 # Handle execution as pmPostInstall.script
 if [ -z "$IPKG_OFFLINE_ROOT" ]; then
@@ -19,6 +20,15 @@ rm -f /var/usr/sbin/${PID}
 /sbin/stop ${PID} || true
 /usr/bin/killall -9 ${PID} || true
 
+# Remove the dummy uinput upstart script
+if [ -f /var/palm/event.d/${UINPUT} ]; then
+  grep "Dummy Script" /var/palm/event.d/${UINPUT} && rm -f /var/palm/event.d/${UINPUT}
+fi
+
+if [ -f /etc/event.d/${UINPUT} ]; then
+  grep "Dummy Script" /etc/event.d/${UINPUT} && rm -f /etc/event.d/${UINPUT}
+fi
+
 # Remove the upstart script
 rm -f /etc/event.d/${PID} /var/palm/event.d/${PID} /var/palm/event.d/${PID}-settings
 
@@ -32,8 +42,18 @@ install -m 755 $APPS/usr/palm/applications/${PID}/bin/${PID} /var/usr/sbin/${PID
 # Install the upstart script
 if [ -d /var/palm/event.d ] ; then
   cp $APPS/usr/palm/applications/${PID}/upstart/${PID} /var/palm/event.d/${PID}
+  uinput_file=/var/palm/event.d/${UINPUT}
 else
   cp $APPS/usr/palm/applications/${PID}/upstart/${PID} /etc/event.d/${PID}
+  uinput_file=/etc/event.d/${UINPUT}
+fi
+
+# Install the dummy uinput upstart script
+if [ ! -f ${uinput_file} ]; then
+  touch ${uinput_file}
+  echo "#!/bin/sh" >> ${uinput_file}
+  echo "description \"Dummy Script\"" >> ${uinput_file}
+  echo "start on stopped finish" >> ${uinput_file}
 fi
 
 # Install the udev rules file
