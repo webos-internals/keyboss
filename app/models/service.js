@@ -66,6 +66,19 @@ service.setTapTimeout = function(callback, timeout) {
   return request;
 }
 
+service.setHoldTimeout = function(callback, timeout) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'setHoldTimeout',
+    parameters: {
+      timeout: timeout
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
+
 service.installAction = function(callback, trigger, action) {
   var request = new Mojo.Service.Request(service.identifier, {
     method: 'installAction',

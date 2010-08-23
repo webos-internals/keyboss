@@ -23,7 +23,9 @@
  */
 #define DEFAULT_DELAY  (500)
 #define DEFAULT_PERIOD (100)
-#define DEFAULT_TIMEOUT (250)
+
+#define DEFAULT_HOLD_TIMEOUT (450)
+#define DEFAULT_TAP_TIMEOUT (140)
 
 #define MAX_ACTIONS (8)
 
@@ -43,6 +45,10 @@ struct key_modifier {
   int count;
   int num_active;
   int actions[MAX_ACTIONS];
+  __u16 code;
+  __u16 state;
+  int threshold; // in ms
+  struct timeval time;
 };
 
 struct action_timer {
@@ -52,15 +58,13 @@ struct action_timer {
 };
 
 typedef struct {
-  int state;
-  __u16 code;
   struct key_modifier tap;
   struct key_modifier hold;
 } KEYSTATE;
 
 enum {
   STATE_IDLE,
-  STATE_TAP
+  STATE_WAITING
 };
 
 extern int current_delay;
@@ -71,6 +75,7 @@ extern int u_fd;
 extern int k_fd;
 extern KEYSTATE keystate;
 extern struct action_timer tap_timer;
+extern struct action_timer hold_timer;
 
 /* function declarations */
 bool is_valid_code(int code);

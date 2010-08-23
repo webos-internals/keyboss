@@ -44,11 +44,14 @@ SettingsAssistant.prototype.setup = function() {
 
 	/* use Mojo.View.render to render view templates and add them to the scene, if needed */
 	
+  this.holdTimeGroup = this.controller.get('holdTimeGroup');
+  this.tapTimeGroup = this.controller.get('tapTimeGroup');
   this.holdList = this.controller.get('holdList');
   this.tapList = this.controller.get('tapList');
   this.freqSlider = this.controller.get('freqSlider');
   this.delaySlider = this.controller.get('delaySlider');
   this.tapSlider = this.controller.get('tapSlider');
+  this.holdSlider = this.controller.get('holdSlider');
 
 	/* setup widgets here */
 
@@ -56,16 +59,19 @@ SettingsAssistant.prototype.setup = function() {
   this.delayModel = {value: 500};
   this.freqModel = {value: 100};
   this.tapModel = {value: 250};
+  this.holdModel = {value: 250};
 
   this.controller.setupWidget('delaySlider', this.sliderAttributes, this.delayModel);
   this.controller.setupWidget('freqSlider', this.sliderAttributes, this.freqModel);
   this.controller.setupWidget('tapSlider', this.sliderAttributes, this.tapModel);
+  this.controller.setupWidget('holdSlider', this.sliderAttributes, this.holdModel);
   this.controller.setupWidget('holdList', this.actionsAttributes, this.holdListModel);
   this.controller.setupWidget('tapList', this.actionsAttributes, this.tapListModel);
 
 	/* add event handlers to listen to events from widgets */
   this.handleRateChange = this.rateChange.bindAsEventListener(this);
   this.handleTapTimeoutChange = this.tapTimeoutChange.bindAsEventListener(this);
+  this.handleHoldTimeoutChange = this.holdTimeoutChange.bindAsEventListener(this);
 
   this.holdListFinishAdd = this.holdListFinishAdd.bind(this);
   this.holdListFinishChange = this.holdListFinishChange.bind(this);
@@ -75,6 +81,7 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.delaySlider, 'mojo-property-change', this.handleRateChange);
   Mojo.Event.listen(this.freqSlider, 'mojo-property-change', this.handleRateChange);
   Mojo.Event.listen(this.tapSlider, 'mojo-property-change', this.handleTapTimeoutChange);
+  Mojo.Event.listen(this.holdSlider, 'mojo-property-change', this.handleHoldTimeoutChange);
   Mojo.Event.listen(this.holdList, Mojo.Event.listAdd, this.holdListAdd.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.propertyChanged,	this.holdListChange.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.listDelete,			this.holdListDelete.bindAsEventListener(this));
@@ -121,33 +128,17 @@ SettingsAssistant.prototype.holdListFinishChange = function(payload)
 SettingsAssistant.prototype.holdListChange = function(event) {
   var index = event.model.index;
 
-  service.changeAction(this.holdListFinishChange, 'hold', index, this.actions[event.value]);
+  if (event.property === 'value')
+    service.changeAction(this.holdListFinishChange, 'hold', index, this.actions[event.value]);
 }
 
 SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
 {
   if (payload.returnValue) {
-	  var newData = [];
+    this.holdListData = this.holdListData.without(this.holdListData[index]);
     this.holdListCount--;
-	  if (this.holdListData.length > 0) 
-	  {
-		  for (var d = 0; d < this.holdListData.length; d++) 
-		  {
-			  if (this.holdListData[d].id == id) 
-			  {
-				  // ignore
-			  }
-			  else 
-			  {
-				  if (this.holdListData[d].index > index) 
-				  {
-					  this.holdListData[d].index--;
-				  }
-				  newData.push(this.holdListData[d]);
-			  }
-		  }
-	  }
-	  this.holdListData = newData;
+    if (!this.holdListCount)
+      this.holdTimeGroup.hide();
 	  this.holdListSave();
   }
   else {
@@ -204,9 +195,13 @@ SettingsAssistant.prototype.holdListSave = function()
 SettingsAssistant.prototype.holdListBuildList = function() {
   this.holdListModel.items = [];
   if (this.holdListData.length > 0) {
+    this.holdTimeGroup.show();
     for (var i=0; i<this.holdListData.length; i++) {
       this.holdListModel.items.push(this.holdListData[i]);
     }
+  }
+  else {
+    this.holdTimeGroup.hide();
   }
 };
 
@@ -244,33 +239,17 @@ SettingsAssistant.prototype.tapListChange = function(event)
 {
   var index = event.model.index;
 
-  service.changeAction(this.tapListFinishChange, 'tap', index, this.actions[event.value]);
+  if (event.property === 'value')
+    service.changeAction(this.tapListFinishChange, 'tap', index, this.actions[event.value]);
 }
 
 SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
 {
   if (payload.returnValue) {
-	  var newData = [];
+    this.tapListData = this.tapListData.without(this.tapListData[index]);
     this.tapListCount--;
-	  if (this.tapListData.length > 0) 
-	  {
-		  for (var d = 0; d < this.tapListData.length; d++) 
-		  {
-			  if (this.tapListData[d].id == id) 
-			  {
-				  // ignore
-			  }
-			  else 
-			  {
-				  if (this.tapListData[d].index > index) 
-				  {
-					  this.tapListData[d].index--;
-				  }
-				  newData.push(this.tapListData[d]);
-			  }
-		  }
-	  }
-	  this.tapListData = newData;
+    if (!this.tapListCount)
+      this.tapTimeGroup.hide();
 	  this.tapListSave();
   }
   else {
@@ -328,9 +307,13 @@ SettingsAssistant.prototype.tapListSave = function()
 SettingsAssistant.prototype.tapListBuildList = function() {
   this.tapListModel.items = [];
   if (this.tapListData.length > 0) {
+    this.tapTimeGroup.show();
     for (var i=0; i<this.tapListData.length; i++) {
       this.tapListModel.items.push(this.tapListData[i]);
     }
+  }
+  else {
+    this.tapTimeGroup.hide();
   }
 };
 
@@ -371,12 +354,10 @@ SettingsAssistant.prototype.close = function() {
 }
 
 SettingsAssistant.prototype.handleStatus = function(payload) {
-  Mojo.Log.error("dev = " + Mojo.Environment.DeviceInfo.modelName);
-  Mojo.Log.error("dev = " + Mojo.Environment.DeviceInfo.modelNameAscii);
   if (Mojo.Environment.DeviceInfo.modelNameAscii === "Device")
-  return;
+    return;
+
   if (!payload || !payload.returnValue) {
-    Mojo.Log.error("handle status error");
     this.callback(payload);
     this.showError("Service does not seem to be running, try rebooting and then re-install if unsuccessful", this.close.bind(this));
   }
@@ -389,7 +370,6 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
   else {
     this.actions = payload.actions.clone();
     this.maxActions = payload.max_actions;
-    Mojo.Log.error("actions " + this.actions);
 
     if (payload.installed_hold && payload.installed_hold.length > 0) {
       for (var i = 0; i < payload.installed_hold.length; i++) {
@@ -410,6 +390,11 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
       this.controller.modelChanged(this.tapModel, this);
     }
 
+    if (payload.hold_timeout) {
+      this.holdModel.value = payload.hold_timeout;
+      this.controller.modelChanged(this.holdModel, this);
+    }
+
     if (payload.hold_delay) {
       this.delayModel.value = payload.hold_delay;
       this.controller.modelChanged(this.delayModel, this);
@@ -426,7 +411,7 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
 
 SettingsAssistant.prototype.callback = function(payload) {
   for (p in payload) {
-    Mojo.Log.error(p + ": " + payload[p]);
+    Mojo.Log.info(p + ": " + payload[p]);
   }
 }
 
@@ -450,13 +435,15 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
   service.getRepeatRate(this.handleGet.bind(this));
 }
 
+SettingsAssistant.prototype.holdTimeoutChange = function(event) {
+  service.setHoldTimeout(this.callback, Math.floor(event.value));
+}
+
 SettingsAssistant.prototype.tapTimeoutChange = function(event) {
-  Mojo.Log.error("tap slider change " + event.value);
   service.setTapTimeout(this.callback, Math.floor(event.value));
 }
 
 SettingsAssistant.prototype.rateChange = function(event) {
-  Mojo.Log.error("rate change value " + event.value);
   if (event.target === this.freqSlider)
     service.setRepeatRate(this.callback, -1, Math.floor(event.value), false);
   else if (event.target === this.delaySlider)

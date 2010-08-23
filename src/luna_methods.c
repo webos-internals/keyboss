@@ -213,6 +213,28 @@ err:
   return true;
 }
 
+bool set_hold_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  json_t *object;
+  int timeout = 0;
+
+  object = LSMessageGetPayloadJSON(message);
+  json_get_int(object, "timeout", &timeout);
+
+  syslog(LOG_DEBUG, "set hold timeout: %dms", timeout);
+  if (timeout < 0 || timeout > 2000) {
+    LSMessageRespond(message, 
+        "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Bad paramater\"}", &lserror);
+  }
+
+  set_hold_timeout_ms(timeout);
+
+  LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
+
+  return true;
+}
+
 bool set_tap_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
@@ -292,6 +314,7 @@ bool set_prox_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
+// TODO: status should be subscription
 bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
@@ -307,6 +330,7 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   char *installed_hold = NULL;
   char *installed_tap = NULL;
   int tap_timeout = 0;
+  int hold_timeout = 0;
 
   syslog(LOG_DEBUG, "in get status");
   fd = fopen(sysfs_path, "w");
@@ -348,9 +372,10 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   asprintf(&installed_tap, "%s]", installed_tap);
 
   tap_timeout = tap_timer.value.it_value.tv_sec * 1000 + tap_timer.value.it_value.tv_nsec / 1000000;
+  hold_timeout = hold_timer.value.it_value.tv_sec * 1000 + hold_timer.value.it_value.tv_nsec / 1000000;
 
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, max_actions: %d, actions: %s, installed_hold: %s, installed_tap: %s, \"tap_timeout\": %d, \"hold_delay\": %d, \"hold_interval\": %d, \"prox_timeout\": %d}", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, tap_timeout, current_delay, current_period, prox_timeout);
+  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, max_actions: %d, actions: %s, installed_hold: %s, installed_tap: %s, \"tap_timeout\": %d, \"hold_timeout\": %d, \"hold_delay\": %d, \"hold_interval\": %d, \"prox_timeout\": %d}", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, tap_timeout, hold_timeout, current_delay, current_period, prox_timeout);
 
   LSMessageRespond(message, message_buf, &lserror);
   if (actions) free(actions);
@@ -370,6 +395,7 @@ LSMethod luna_methods[] = {
   {"removeAction", remove_action},
   {"changeAction", change_action},
   {"setTapTimeout", set_tap_timeout},
+  {"setHoldTimeout", set_hold_timeout},
   {"setProxTimeout", set_prox_timeout},
   {0,0}
 };
