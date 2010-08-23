@@ -35,10 +35,10 @@ static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   event.code = code;
   event.value = value;
 
-  //syslog(LOG_INFO, "send event type: %d, code %d, value %d\n",
+  //syslog(LOG_DEBUG, "send event type: %d, code %d, value %d\n",
       //event.type, event.code, event.value);
   if (write(fd, &event, sizeof(event)) != sizeof(event)) {
-    syslog(LOG_INFO, "write to fd %d failed\n", fd);
+    syslog(LOG_DEBUG, "write to fd %d failed\n", fd);
     return -1;
   }
 
@@ -112,11 +112,11 @@ static int flush_queue(ACTIONS action) {
   
   switch (action) {
     case ACTION_FUNCTION:
-      syslog(LOG_INFO, "action function %d", key_queue[0].code);
+      syslog(LOG_DEBUG, "action function %d", key_queue[0].code);
       action_function(key_queue[0].code);
       break;
     case ACTION_CAPITALIZE:
-      syslog(LOG_INFO, "action cap");
+      syslog(LOG_DEBUG, "action cap");
       action_capitalize(key_queue[0].code);
       break;
     case ACTION_DEFAULT:
@@ -138,20 +138,21 @@ static int flush_queue(ACTIONS action) {
 }
 
 void tap_timeout(union sigval sig) {
-  syslog(LOG_INFO, "tap timeout");
+  syslog(LOG_DEBUG, "tap timeout");
   switch (keystate.state) {
     case STATE_TAP:
-      syslog(LOG_INFO, "send up");
+      syslog(LOG_DEBUG, "send up");
       send_key(keystate.code, KEYUP);
       stop_tap();
       break;
     default:
-      syslog(LOG_INFO, "flush");
-      flush_queue(ACTION_DEFAULT);
+      syslog(LOG_DEBUG, "flush");
+      flush_queue(ACTION_NONE);
       stop_tap();
       break;
   }
 
+  keystate.code = 0;
   keystate.state = STATE_IDLE;
 }
 
@@ -198,7 +199,7 @@ int install_hold_action(ACTIONS action) {
   if (hold->num_active >= MAX_ACTIONS)
     return -1;
 
-  syslog(LOG_INFO, "install hold action %d", action);
+  syslog(LOG_DEBUG, "install hold action %d", action);
   hold->actions[hold->num_active++] = action;
 
   return 0;
@@ -255,7 +256,7 @@ static int hold_action() {
     send_key(keystate.code, KEYUP);
     flush_queue(hold->actions[hold->count]);
     hold->count = (hold->count + 1) % hold->num_active;
-    syslog(LOG_INFO, "num %d, count %d\n", hold->count, hold->num_active);
+    syslog(LOG_DEBUG, "num %d, count %d\n", hold->count, hold->num_active);
   }
   else {
     flush_queue(ACTION_NONE);
@@ -307,16 +308,20 @@ int set_tap_timeout_ms(int ms) {
 static int initialize() {
   memset(&tap_timer, 0, sizeof(struct action_timer));
   memset(&keystate, 0, sizeof(KEYSTATE));
+  int ret;
 
+  syslog(LOG_DEBUG, "initialize");
   tap_timer.evp.sigev_notify = SIGEV_THREAD;
   tap_timer.evp.sigev_notify_function = tap_timeout;
   tap_timer.value.it_value.tv_sec = 0;
   tap_timer.value.it_value.tv_nsec = DEFAULT_TIMEOUT * 1000000;
-  timer_create(CLOCK_REALTIME, &tap_timer.evp, &tap_timer.timerid);
+  ret = timer_create(CLOCK_MONOTONIC, &tap_timer.evp, &tap_timer.timerid);
+  syslog(LOG_DEBUG, "timer create returned %d", ret);
 }
 
 static int start_timeout() {
-  syslog(LOG_DEBUG, "start timeout");
+  syslog(LOG_DEBUG, "start timeout %d s, %d ns", tap_timer.value.it_value.tv_sec, tap_timer.value.it_value.tv_nsec);
+  syslog(LOG_DEBUG, "timerid %d", tap_timer.timerid);
   timer_settime(&tap_timer.timerid, 0, &tap_timer.value, NULL);
 }
 
@@ -351,7 +356,7 @@ static int process_event(struct input_event *event) {
       break;
     case KEYHOLD:
       stop_tap();
-      syslog(LOG_INFO, "hold action");
+      syslog(LOG_DEBUG, "hold action");
       hold_action();
       break;
     default:
@@ -439,7 +444,7 @@ static void *pipe_keys(void *ptr) {
     goto err;
 
   while (read(k_fd, &event, sizeof (struct input_event)) > 0) {
-    //syslog(LOG_INFO, "event type: %d, code: %d, value: %d\n", 
+    //syslog(LOG_DEBUG, "event type: %d, code: %d, value: %d\n", 
         //event.type, event.code, event.value);
     process_event(&event);
     //send_event(u_fd, event.type, event.code, event.value);
@@ -451,7 +456,7 @@ err:
   if (k_fd > 0)
     close(k_fd);
 
-  syslog(LOG_INFO, "err u_fd %d", u_fd);
+  syslog(LOG_DEBUG, "err u_fd %d", u_fd);
   return NULL;
 
 }
@@ -466,7 +471,7 @@ int set_repeat(__s32 delay, __s32 period) {
   /* FIXME: use sysfs to find the keypad device by name ? */ 
   fd=open(KEYPAD_DEVICE, O_WRONLY | O_SYNC); 
   if (fd < 0) {
-    syslog(LOG_INFO, "Unable to open device %s in write mode\n", KEYPAD_DEVICE);
+    syslog(LOG_DEBUG, "Unable to open device %s in write mode\n", KEYPAD_DEVICE);
     return -1;
   }
 
@@ -485,7 +490,7 @@ int set_repeat(__s32 delay, __s32 period) {
 
 int send_key(__u16 code, __s32 value) {
   __s32 rel_val = 0;
-  syslog(LOG_INFO, "send key %d, %d\n", code, value);
+  syslog(LOG_DEBUG, "send key %d, %d\n", code, value);
   send_event(u_fd, EV_KEY, code, value);
   if (value == 2)
     rel_val = 1;
@@ -493,7 +498,7 @@ int send_key(__u16 code, __s32 value) {
 }
 
 void cleanup(int sig) {
-  syslog(LOG_INFO, "cleanup (sig %d)", sig);
+  syslog(LOG_DEBUG, "cleanup (sig %d)", sig);
   pthread_cancel(pipe_id);
   set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
   exit(0);
