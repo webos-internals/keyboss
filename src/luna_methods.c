@@ -257,6 +257,7 @@ bool set_tap_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
+#if 0
 bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
@@ -284,6 +285,26 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   LSMessageRespond(message, "{\"returnValue\": true}", &lserror);
   
+  return true;
+}
+#endif
+
+bool set_state(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit (&lserror);
+  json_t *object;
+  bool enable = false;
+ 
+  object = LSMessageGetPayloadJSON(message);
+  json_get_bool(object, "enable", &enable);
+
+  if (enable)
+    start_pipe_thread();
+  else
+    stop_pipe_thread();
+
+  LSMessageReply(lshandle, message, "{\"returnValue\": true}", &lserror);
+
   return true;
 }
 
@@ -387,10 +408,11 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
 LSMethod luna_methods[] = { 
   {"getStatus", get_status},
+  {"setState", set_state},
   {"emulateKey", emulate_key},
   {"getRepeatRate", get_repeat_rate},
   {"setRepeatRate", set_repeat_rate},
-  {"setModifiers", set_modifiers},
+  //{"setModifiers", set_modifiers},
   {"installAction", install_action},
   {"removeAction", remove_action},
   {"changeAction", change_action},

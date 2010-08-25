@@ -10,15 +10,15 @@
 #include "luna_service.h"
 #include "keyboss.h"
 
-static pthread_t pipe_id;
+static pthread_t pipe_id = 0;
 int u_fd = -1;
 int k_fd = -1;
-int current_delay;
-int current_period;
-int hold_enabled = 0;
-int double_enabled = 0;
-int hold_key = 0;
-int double_key = 0;
+int current_delay = DEFAULT_DELAY;
+int current_period = DEFAULT_PERIOD;
+KEYSTATE keystate;
+struct action_timer tap_timer;
+struct action_timer hold_timer;
+struct input_event key_queue[KEYQ_SIZE];
 
 static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   struct input_event event;
@@ -91,11 +91,6 @@ static int modifiable(__u16 code) {
       break;
   }
 }
-
-KEYSTATE keystate;
-struct action_timer tap_timer;
-struct action_timer hold_timer;
-struct input_event key_queue[KEYQ_SIZE];
 
 static int flush_queue(ACTIONS action, __u16 code) {
   int i;
@@ -327,10 +322,11 @@ int set_hold_timeout_ms(int ms) {
 
 
 static int initialize() {
+  int ret;
+
   memset(&tap_timer, 0, sizeof(struct action_timer));
   memset(&hold_timer, 0, sizeof(struct action_timer));
   memset(&keystate, 0, sizeof(KEYSTATE));
-  int ret;
 
   tap_timer.evp.sigev_notify = SIGEV_THREAD;
   tap_timer.evp.sigev_notify_function = tap_timeout;
@@ -536,9 +532,31 @@ int send_key(__u16 code, __s32 value) {
 
 void cleanup(int sig) {
   syslog(LOG_NOTICE, "cleanup (sig %d)", sig);
+  system("/sbin/stop hidd");
   pthread_cancel(pipe_id);
   set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
+  system("/sbin/start hidd");
   exit(0);
+}
+
+int start_pipe_thread() {
+  if (!pipe_id) {
+    pthread_create(&pipe_id, NULL, pipe_keys, NULL);
+  }
+}
+
+int stop_pipe_thread() {
+  if (pipe_id)  {
+    cancel_hold_timeout();
+    stop_tap();
+    system("/sbin/stop hidd");
+    pthread_cancel(pipe_id);
+    close(u_fd);
+    set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
+    close(k_fd);
+    pipe_id = 0;
+    system("/sbin/start hidd");
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -548,9 +566,8 @@ int main(int argc, char *argv[]) {
 	signal(SIGHUP, cleanup);
 	signal(SIGKILL, cleanup);
 
-  pthread_create(&pipe_id, NULL, pipe_keys, NULL);
-
   initialize();
+  start_pipe_thread();
 
   if (luna_service_initialize(DBUS_ADDRESS))
     luna_service_start();

@@ -15,10 +15,3 @@ script
 exec /var/usr/sbin/org.webosinternals.keyboss
 
 end script
-
-post-stop script
-
-/sbin/stop hidd
-/sbin/start hidd
-
-end script

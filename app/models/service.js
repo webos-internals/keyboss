@@ -13,6 +13,18 @@ service.getStatus = function(callback) {
   return request;
 }
 
+service.setState = function(callback, enable) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'setState',
+    parameters: {
+      enable: enable
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
 service.getRepeatRate = function(callback) {
   var request = new Mojo.Service.Request(service.identifier, {
     method: 'getRepeatRate',
