@@ -10,6 +10,7 @@
 #include "luna_service.h"
 #include "keyboss.h"
 
+char keypad_device[80] = "";
 static pthread_t pipe_id = 0;
 int u_fd = -1;
 int k_fd = -1;
@@ -322,11 +323,18 @@ int set_hold_timeout_ms(int ms) {
 
 
 static int initialize() {
+  char keypad_link[20];
   int ret;
 
   memset(&tap_timer, 0, sizeof(struct action_timer));
   memset(&hold_timer, 0, sizeof(struct action_timer));
   memset(&keystate, 0, sizeof(KEYSTATE));
+
+  // Read the keypad0 symlink to find out the actual keyboard device
+  ret = readlink("/dev/input/keypad0", keypad_link, sizeof (keypad_link));
+  if (ret < 0)
+    syslog(LOG_ERR, "Unable to read symlink /dev/input/keypad0");
+  sprintf(keypad_device, "/dev/input/%s", keypad_link);
 
   tap_timer.evp.sigev_notify = SIGEV_THREAD;
   tap_timer.evp.sigev_notify_function = tap_timeout;
@@ -418,13 +426,18 @@ static int process_event(struct input_event *event) {
 
 static void *pipe_keys(void *ptr) {
   int i; 
+  int ret;
   struct uinput_user_dev device; 
   struct input_event event;
 
+  if (!keypad_device[0]) {
+    syslog(LOG_ERR, "Error: unknown keypad device");
+    return NULL;
+  }
+
   memset(&device, 0, sizeof device);
 
-  /* FIXME: use sysfs to find the keypad device by name */ 
-  k_fd=open(KEYPAD_DEVICE, O_RDONLY); 
+  k_fd=open(keypad_device, O_RDONLY); 
   if (k_fd < 0) 
     goto err;
 
@@ -501,21 +514,22 @@ bool is_valid_code(int code) {
 int set_repeat(__s32 delay, __s32 period) {
   int fd;
 
-  /* FIXME: use sysfs to find the keypad device by name ? */ 
-  fd=open(KEYPAD_DEVICE, O_WRONLY | O_SYNC); 
-  if (fd < 0) {
-    syslog(LOG_ERR, "Unable to open device %s in write mode\n", KEYPAD_DEVICE);
-    return -1;
-  }
+  if (keypad_device[0]) {
+    fd=open(keypad_device, O_WRONLY | O_SYNC); 
+    if (fd < 0) {
+      syslog(LOG_ERR, "Unable to open device %s in write mode\n", keypad_device);
+      return -1;
+    }
 
-  if (delay >= 0) {
-    if (!send_event(fd, EV_REP, REP_DELAY, delay))
-      current_delay = delay;
-  }
+    if (delay >= 0) {
+      if (!send_event(fd, EV_REP, REP_DELAY, delay))
+        current_delay = delay;
+    }
 
-  if (period >= 0) {
-    if (!send_event(fd, EV_REP, REP_PERIOD, period))
-      current_period = period;
+    if (period >= 0) {
+      if (!send_event(fd, EV_REP, REP_PERIOD, period))
+        current_period = period;
+    }
   }
 
   return 0;

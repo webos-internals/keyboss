@@ -5,7 +5,6 @@
 #include <linux/input.h>
 
 #define DBUS_ADDRESS "org.webosinternals.keyboss"
-#define KEYPAD_DEVICE "/dev/input/event2"
 #define UINPUT_DEVICE "/dev/input/uinput"
 
 /* FIXME: Get these macros from Palm patched input.h */
