@@ -1,8 +1,9 @@
 {
   "id": "org.webosinternals.keyboss",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "vendor": "WebOS Internals",
   "type": "web",
   "main": "index.html",
   "title": "KeyBoss",
+  "noWindow": true,
 }
