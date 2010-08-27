@@ -7,6 +7,7 @@
 #include <signal.h>
 #include <syslog.h>
 #include <string.h>
+#include <errno.h>
 #include "luna_service.h"
 #include "keyboss.h"
 
@@ -29,8 +30,8 @@ static int send_event(int fd, __u16 type, __u16 code, __s32 value) {
   event.code = code;
   event.value = value;
 
-  //syslog(LOG_DEBUG, "send event type: %d, code %d, value %d\n", 
-      //event.type, event.code, event.value);
+  syslog(LOG_DEBUG, "send event type: %d, code %d, value %d\n", 
+      event.type, event.code, event.value);
   if (write(fd, &event, sizeof(event)) != sizeof(event)) {
     syslog(LOG_ERR, "write to fd %d failed\n", fd);
     return -1;
@@ -165,22 +166,31 @@ static int hold_action() {
   struct key_modifier *hold = &keystate.hold;
 
   if (hold->num_active) {
+    if (hold->count == hold->num_active) {
+      if (!hold->circular)
+        return 0;
+      hold->count -= hold->num_active;
+    }
     send_key(KEY_BACKSPACE, KEYDOWN);
     send_key(KEY_BACKSPACE, KEYUP);
     send_key(keystate.hold.code, KEYUP);
     flush_queue(hold->actions[hold->count], hold->code);
-    hold->count = (hold->count + 1) % hold->num_active;
+    hold->count++;
     start_hold_timeout();
   }
   else {
     flush_queue(ACTION_NONE, 0);
   }
+
+  return 0;
 }
 
 static int tap_action() {
   struct key_modifier *tap = &keystate.tap;
 
   if (tap->num_active) {
+    if (!tap->circular && (tap->count == tap->num_active))
+      return 0;
     send_key(KEY_BACKSPACE, KEYDOWN);
     send_key(KEY_BACKSPACE, KEYUP);
     send_key(keystate.tap.code, KEYUP);
@@ -191,6 +201,8 @@ static int tap_action() {
   else {
     flush_queue(ACTION_NONE, 0);
   }
+
+  return 0;
 }
 
 static int add_key_to_queue(__u16 code, __s32 value) {
@@ -253,6 +265,9 @@ int remove_hold_action(ACTIONS action, int index) {
   hold->actions[j-1] = ACTION_NONE; 
   hold->num_active--; 
 
+  if (hold->num_active == 1)
+    hold->circular = false;
+
   return 0;
 }
 
@@ -263,6 +278,9 @@ int install_hold_action(ACTIONS action) {
     return -1;
 
   hold->actions[hold->num_active++] = action;
+  
+  if (hold->num_active > 1)
+    hold->circular = true;
 
   return 0;
 }
@@ -292,6 +310,9 @@ int remove_tap_action(ACTIONS action) {
     }
   }
 
+  if (tap->num_active == 1)
+    tap->circular = false;
+
   return -1;
 }
 
@@ -302,6 +323,9 @@ int install_tap_action(ACTIONS action) {
     return -1;
 
   tap->actions[tap->num_active++] = action;
+
+  if (tap->num_active > 1)
+    tap->circular = true;
 
   return 0;
 }
@@ -438,14 +462,18 @@ static void *pipe_keys(void *ptr) {
   memset(&device, 0, sizeof device);
 
   k_fd=open(keypad_device, O_RDONLY); 
-  if (k_fd < 0) 
+  if (k_fd < 0)  {
+    syslog(LOG_ERR, "open keypad err: %s", strerror(errno));
     goto err;
+  }
 
   system("/sbin/stop hidd");
   u_fd=open(UINPUT_DEVICE ,O_WRONLY); 
   system("/sbin/start hidd");
-  if (u_fd < 0)
+  if (u_fd < 0) {
+    syslog(LOG_ERR, "open uinput err: %s", strerror(errno));
     goto err;
+  }
 
   //restart_hidd(); 
   strcpy(device.name, "WebOS Internals KeyBoss");

@@ -44,6 +44,7 @@ struct key_modifier {
   int count;
   int num_active;
   int actions[MAX_ACTIONS];
+  bool circular;
   __u16 code;
   __u16 state;
   int threshold; // in ms
