@@ -9,9 +9,13 @@ function StartupAssistant()
     this.newMessages =
 	[
 		// Don't forget the comma on all but the last entry
-    { version: '0.2.5', log: [ 'Add start/changelog scene' ]},
-    { version: '0.2.4', log: [ 'Add Enable/Disable toggle' ]},
-    { version: '0.2.0', log: [ 'Re-design with trigger/action lists']},
+    { version: '0.2.5', log: [ 
+                               'Changed logic to not cycle when only 1 action active',
+                               'Fixed tap action bug that missed keys in universal search' 
+                               'Added start/changelog scene',
+                             ]},
+    { version: '0.2.4', log: [ 'Added Enable/Disable toggle' ]},
+    { version: '0.2.0', log: [ 'Re-designed with trigger/action lists']},
 		{ version: '0.1.0', log: [ 'Initial Release!' ] }
 	];
 	

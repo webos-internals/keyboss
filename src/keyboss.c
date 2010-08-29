@@ -114,7 +114,7 @@ static int flush_queue(ACTIONS action, __u16 code) {
   // Now zero out the queue
   for (i=0; i<KEYQ_SIZE; i++) {
     if (key_queue[i].code) {
-      if (action == ACTION_NONE) 
+      if (action == ACTION_NONE)
         send_key(key_queue[i].code, key_queue[i].value); 
       key_queue[i].code = 0; 
       key_queue[i].value = 0; 
@@ -123,12 +123,16 @@ static int flush_queue(ACTIONS action, __u16 code) {
 }
 
 static int stop_tap() {
-  return 0;
   struct itimerspec value;
 
   value.it_value.tv_sec = 0;
   value.it_value.tv_nsec = 0;
 
+  timer_settime(tap_timer.timerid, 0, &value, NULL);
+  flush_queue(ACTION_NONE, 0);
+  keystate.tap.state = STATE_IDLE;
+  return 0;
+#if 0
   if (keystate.tap.state == STATE_WAITING) {
     keystate.tap.count = 0;
     keystate.tap.code = 0;
@@ -138,6 +142,7 @@ static int stop_tap() {
     if (keystate.hold.state == STATE_IDLE)
       flush_queue(ACTION_NONE, 0);
   }
+#endif
 }
 
 static int start_tap_timeout() {
@@ -196,7 +201,7 @@ static int tap_action() {
     send_key(keystate.tap.code, KEYUP);
     flush_queue(tap->actions[tap->count], tap->code);
     tap->count = (tap->count + 1) % tap->num_active;
-    //start_tap_timeout();
+    start_tap_timeout();
   }
   else {
     flush_queue(ACTION_NONE, 0);
@@ -407,8 +412,13 @@ static int process_event(struct input_event *event) {
     case KEYDOWN:
       cancel_hold_timeout();
       if (keystate.tap.code == event->code && within_tap_threshold(event)) {
-        tap_action();
-        memcpy(&keystate.tap.time, &event->time, sizeof keystate.tap.time);
+        if (keystate.tap.state == STATE_IDLE) {
+          syslog(LOG_WARNING, "Missed tap action due to timeout");
+        }
+        else {
+          tap_action();
+          memcpy(&keystate.tap.time, &event->time, sizeof keystate.tap.time);
+        }
       }  
       else {
         flush_queue(ACTION_NONE, 0);
@@ -419,18 +429,13 @@ static int process_event(struct input_event *event) {
         if (keystate.tap.num_active) {
           keystate.tap.code = event->code;
           memcpy(&keystate.tap.time, &event->time, sizeof keystate.tap.time);
-        }
-#if 0
-        if (keystate.tap.num_active) {
-          keystate.tap.code = event->code;
           start_tap_timeout();
         }
-#endif
       }
       break;
     case KEYUP:
       cancel_hold_timeout();
-      if (keystate.tap.code != event->code) {
+      if (keystate.tap.code != event->code || keystate.tap.state == STATE_IDLE) {
         flush_queue(ACTION_NONE, 0);
         stop_tap();
       }
