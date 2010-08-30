@@ -299,26 +299,35 @@ int change_tap_action(int index, ACTIONS action) {
  tap->actions[index] = action; 
 }
 
-int remove_tap_action(ACTIONS action) {
-  int i, j;
+int remove_tap_action(ACTIONS action, int index) {
+  int i, j, ix;
 
   struct key_modifier *tap = &keystate.tap;
 
-  for (i=0; i<tap->num_active; i++) {
-    if (tap->actions[i] == action) {
-      for (j=i+1; j<tap->num_active; j++) {
-        tap->actions[j-1] = tap->actions[j];
+  if (index >= 0)
+    ix = index;
+  else {
+    for (i=0; i<tap->num_active; i++) {
+      if (tap->actions[i] = action) {
+        ix = i;
       }
-      tap->actions[j-1] = ACTION_NONE;
-      tap->num_active--;
-      return 0;
     }
   }
+
+  if (ix < 0 || ix >= tap->num_active)
+    return -1;
+
+  for (j=ix+1; j<tap->num_active; j++) { 
+    tap->actions[j-1] = tap->actions[j]; 
+  } 
+
+  tap->actions[j-1] = ACTION_NONE; 
+  tap->num_active--; 
 
   if (tap->num_active == 1)
     tap->circular = false;
 
-  return -1;
+  return 0;
 }
 
 int install_tap_action(ACTIONS action) {

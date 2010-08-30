@@ -9,6 +9,7 @@ function StartupAssistant()
     this.newMessages =
 	[
 		// Don't forget the comma on all but the last entry
+    { version: '0.2.6', log: [ 'Fixed removal of tap action' ]},
     { version: '0.2.5', log: [ 
                                'Added preview header for testing settings',
                                'Changed logic to not cycle when only 1 action active',
