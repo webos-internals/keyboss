@@ -141,6 +141,10 @@ SettingsAssistant.prototype.hidePreview = function() {
 }
 
 SettingsAssistant.prototype.keyHandler = function(event) {
+  if (event.keyCode === Mojo.Char.metaKey) {
+    return;
+  }
+
   this.controller.stopListening(this.controller.window, 'keydown', this.keyHandler);
   this.controller.stopListening(this.controller.window, 'keyup', this.keyHandler);
   this.previewHeader.show();
