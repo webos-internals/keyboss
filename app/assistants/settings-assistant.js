@@ -39,6 +39,13 @@ SettingsAssistant.prototype.setup = function() {
     focusMode: Mojo.Widget.focusSelectMode
   };
 
+  this.textAttributes = {
+    focusMode: Mojo.Widget.focusSelectMode,
+    autoReplace: false,
+    textCase: Mojo.Widget.steModeLowerCase,
+    changeOnKeyPress: true
+  };
+
   this.holdListModel = {items:[]};
   this.tapListModel = {items:[]};
 
@@ -53,6 +60,8 @@ SettingsAssistant.prototype.setup = function() {
   this.tapSlider = this.controller.get('tapSlider');
   this.holdSlider = this.controller.get('holdSlider');
   this.enableToggle = this.controller.get('enableToggle');
+  this.previewHeader = this.controller.get('previewHeader');
+  this.preview = this.controller.get('preview');
 
 	/* setup widgets here */
 
@@ -69,6 +78,7 @@ SettingsAssistant.prototype.setup = function() {
   this.controller.setupWidget('holdList', this.actionsAttributes, this.holdListModel);
   this.controller.setupWidget('tapList', this.actionsAttributes, this.tapListModel);
   this.controller.setupWidget('enableToggle', {}, {value: true});
+  this.controller.setupWidget('preview', this.textAttributes, {});
 
 	/* add event handlers to listen to events from widgets */
   this.handleRateChange = this.rateChange.bindAsEventListener(this);
@@ -80,6 +90,14 @@ SettingsAssistant.prototype.setup = function() {
   this.holdListFinishChange = this.holdListFinishChange.bind(this);
   this.tapListFinishAdd = this.tapListFinishAdd.bind(this);
   this.tapListFinishChange = this.tapListFinishChange.bind(this);
+
+  this.keyHandler = this.keyHandler.bindAsEventListener(this);
+  this.tapHandler = this.tapHandler.bindAsEventListener(this);
+  this.previewChange = this.previewChange.bindAsEventListener(this);
+  this.hidePreview = this.hidePreview.bind(this);
+
+  this.preview.hide();
+  this.previewHeader.hide();
 
   Mojo.Event.listen(this.delaySlider, 'mojo-property-change', this.handleRateChange);
   Mojo.Event.listen(this.freqSlider, 'mojo-property-change', this.handleRateChange);
@@ -93,11 +111,47 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.tapList, Mojo.Event.listAdd, this.tapListAdd.bindAsEventListener(this));
   Mojo.Event.listen(this.tapList, Mojo.Event.propertyChanged,	this.tapListChange.bindAsEventListener(this));
   Mojo.Event.listen(this.tapList, Mojo.Event.listDelete,			this.tapListDelete.bindAsEventListener(this));
+
+  Mojo.Event.listen(this.controller.window, 'keydown', this.keyHandler);
+  Mojo.Event.listen(this.controller.window, 'keyup', this.keyHandler);
+
+  Mojo.Event.listen(this.preview, Mojo.Event.tap, this.tapHandler);
+
+  Mojo.Event.listen(this.preview, Mojo.Event.propertyChange, this.previewChange);
   service.getStatus(this.handleStatus.bind(this));
 };
 
-SettingsAssistant.prototype.setupActionWidgets = function(payload)
-{
+SettingsAssistant.prototype.tapHandler = function() {
+  this.hidePreview();
+}
+
+SettingsAssistant.prototype.previewChange = function(event) {
+  //TODO: Not working... why?
+  if (event.value == '') {
+    this.hidePreview();
+  }
+}
+
+SettingsAssistant.prototype.hidePreview = function() {
+  this.preview.mojo.blur();
+  this.preview.hide();
+  this.previewHeader.hide();
+  this.controller.listen(this.controller.window, 'keydown', this.keyHandler);
+  this.controller.listen(this.controller.window, 'keyup', this.keyHandler);
+}
+
+SettingsAssistant.prototype.keyHandler = function(event) {
+  this.controller.stopListening(this.controller.window, 'keydown', this.keyHandler);
+  this.controller.stopListening(this.controller.window, 'keyup', this.keyHandler);
+  this.previewHeader.show();
+  this.preview.show();
+  this.preview.mojo.focus();
+  if (this.previewTimer)
+    clearTimeout(this.previewTimer);
+  //this.previewTimer = setTimeout(this.hidePreview, 3000);
+}
+
+SettingsAssistant.prototype.setupActionWidgets = function(payload) {
   var choices = [];
 
   for (var i=0; i<this.maxActions; i++) {

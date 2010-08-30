@@ -1,1 +1,70 @@
-/* TODO: put your application-specific CSS here */
+.previewText
+{
+	display: inline;
+	z-index: 20000;
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	height: 50px;
+	color: #fff;
+	padding-top: 2px;
+	padding-left: 1px;
+	border-width: 10px 25px 10px 25px;
+	-webkit-border-image: url(../images/palm-default/search-box.png) 10 25 10 25 stretch stretch;
+	-webkit-box-sizing: border-box;
+}
+
+.previewText input
+{
+	color: #fff;
+	background: none;
+	margin-top: 0px;
+	margin-left: -1px;
+	border: 0px;
+	padding: 0px;
+}
+
+.previewIcon
+{
+  display: inline;
+  background: url(../images/palm-default/cancel-progress-icon.png);
+}
+
+
+.closeButton
+{
+	z-index: 20000;
+	position: absolute;
+	right: -16px;
+	bottom: 7px;
+	height: 35px;
+	width: 38px;
+	border-width: 0px 16px 0px 16px;
+	-webkit-box-sizing: border-box;
+	-webkit-border-image: url(../images/header-button-press.png);
+	-webkit-border-image: url(../images/header-button.png) 0 16 0 16 stretch stretch;
+}
+.closeButton.selected
+{
+	-webkit-border-image: url(../images/header-button-press.png) 0 16 0 16 stretch stretch;
+}
+.closeButton .icon
+{
+	margin: 0px;
+	padding: 0px;
+	margin-top: 5px;
+	margin-left: -8px;
+	width: 21px;
+	height: 23px;
+	background: url(../images/cancel-progress-icon.png) center center no-repeat;
+}
+.previewTitle
+{
+	float: left;
+	display: block;
+	width: 150px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}

@@ -1,7 +1,7 @@
 function StartupAssistant()
 {
     // on first start, this message is displayed, along with the current version message from below
-    this.firstMessage = $L('Here are some tips for first-timers:<ul><li>KeyBoss has no tips yet</li></ul>');
+    this.firstMessage = $L('Here are some tips for first-timers:<ul><li>Start typing at any time to bring up preview header.  Tap the header to hide it.</li></ul>');
 	
     this.secondMessage = $L('Take total control over your keyboard.<br>Please consider making a <a href=http://www.webos-internals.org/wiki/WebOS_Internals:Site_support>donation</a> if you wish to show your appreciation.');
 	
@@ -10,8 +10,9 @@ function StartupAssistant()
 	[
 		// Don't forget the comma on all but the last entry
     { version: '0.2.5', log: [ 
+                               'Added preview header for testing settings',
                                'Changed logic to not cycle when only 1 action active',
-                               'Fixed tap action bug that missed keys in universal search' 
+                               'Fixed tap action bug that missed keys in universal search',
                                'Added start/changelog scene',
                              ]},
     { version: '0.2.4', log: [ 'Added Enable/Disable toggle' ]},
