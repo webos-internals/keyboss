@@ -14,16 +14,7 @@ preferenceCookie.prototype.get = function(reload)
 			this.prefs = 
 			{
 				// Global Group
-				theme: 'palm-default',
-				setLogLevel: true,
-				
-				// Main Group
-				lastLog: 'allapps',
-				listStockApps: false,
-				popLog: false,
-				
-				// Log Group
-				copyStyle: 'clean'
+				theme: 'palm-default'
 				
 			};
 			

@@ -1,4 +1,11 @@
 function SettingsAssistant() {
+	
+  // subtitle random list
+  this.randomSub = 
+  [
+	{weight: 1, text: $L('Random Subtitles FTW!')}
+  ];
+	
   this.holdList = false;
   this.holdListData = [];
   this.holdListCount = 0;
@@ -16,6 +23,9 @@ function SettingsAssistant() {
 
 SettingsAssistant.prototype.setup = function() {
 	/* this function is for setup tasks that have to happen when the scene is first created */
+	
+    this.controller.get('version').innerHTML = "v" + Mojo.Controller.appInfo.version;
+    this.controller.get('subTitle').innerHTML = this.getRandomSubTitle();
 		
   this.sliderAttributes = {
     modelProperty: 'value',
@@ -514,6 +524,36 @@ SettingsAssistant.prototype.rateChange = function(event) {
     service.setRepeatRate(this.callback, -1, Math.floor(event.value), false);
   else if (event.target === this.delaySlider)
     service.setRepeatRate(this.callback, Math.floor(event.value), -1, false);
+}
+
+SettingsAssistant.prototype.getRandomSubTitle = function()
+{
+	// loop to get total weight value
+	var weight = 0;
+	for (var r = 0; r < this.randomSub.length; r++)
+	{
+		weight += this.randomSub[r].weight;
+	}
+	
+	// random weighted value
+	var rand = Math.floor(Math.random() * weight);
+	//alert('rand: ' + rand + ' of ' + weight);
+	
+	// loop through to find the random title
+	for (var r = 0; r < this.randomSub.length; r++)
+	{
+		if (rand <= this.randomSub[r].weight)
+		{
+			return this.randomSub[r].text;
+		}
+		else
+		{
+			rand -= this.randomSub[r].weight;
+		}
+	}
+	
+	// if no random title was found (for whatever reason, wtf?) return first and best subtitle
+	return this.randomSub[0].text;
 }
 
 SettingsAssistant.prototype.activate = function(event) {

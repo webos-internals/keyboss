@@ -1,4 +1,100 @@
-.previewText
+/*
+ * Global Styles
+ */
+.scene-fade-top
+{
+	position: fixed; 
+	top: 0; 
+	z-index: 11000;
+	height: 30px; 
+	width: 100%;
+	background: url(../images/palm-default/fade-top.png) top center repeat-x;
+	-webkit-palm-mouse-target: ignore;
+}
+.scene-fade-bottom
+{
+	position: fixed; 
+	bottom: 0; 
+	z-index: 11000;
+	height: 30px; 
+	width: 100%;
+	background: url(../images/palm-default/fade-bottom.png) bottom center repeat-x;
+	-webkit-palm-mouse-target: ignore;
+}
+
+
+/*
+ * Startup Scene Styles
+ */
+.startup #data .palm-divider.labeled .label
+{
+	text-transform: lowercase;
+}
+.startup #data
+{
+	font-size: 18px;
+}
+.startup #data .text
+{
+	padding-top: 4px;
+	padding-left: 17px;
+	padding-right: 15px;
+	padding-bottom: 10px;
+}
+.startup #data ul
+{
+	margin: 0px;
+	padding-left: 37px;
+	padding-right: 15px;
+	padding-bottom: 10px;
+}
+.startup #data ul.changelog
+{
+	font-size: 15px;
+}
+
+
+
+
+
+/*
+ * "Settings" Main Scene Styles
+ */
+.settings .palm-page-header-wrapper .icon
+{
+	width: 76px;
+	height: 75px;
+	background: url(../icon.png) center center no-repeat;
+}
+.settings .palm-page-header-wrapper .title
+{
+	padding-left: 80px;
+}
+.settings .palm-page-header-wrapper .title.main
+{
+	font-size: 30px;
+	padding-top: 5px;
+	padding-bottom: 0px;
+}
+.settings .palm-page-header-wrapper .title .version
+{
+	font-size: 12px;
+	color: #888;
+	text-transform: lowercase;
+}
+.settings .palm-page-header-wrapper .title.sub
+{
+	font-size: 14px;
+	padding-top: 0px;
+	margin-top: 0px;
+}
+
+
+
+
+
+
+.settings .previewText
 {
 	display: inline;
 	z-index: 20000;
@@ -15,7 +111,7 @@
 	-webkit-box-sizing: border-box;
 }
 
-.previewText input
+.settings .previewText input
 {
 	color: #fff;
 	background: none;
@@ -25,14 +121,14 @@
 	padding: 0px;
 }
 
-.previewIcon
+.settings .previewIcon
 {
   display: inline;
   background: url(../images/palm-default/cancel-progress-icon.png);
 }
 
 
-.closeButton
+.settings .closeButton
 {
 	z-index: 20000;
 	position: absolute;
@@ -45,11 +141,11 @@
 	-webkit-border-image: url(../images/header-button-press.png);
 	-webkit-border-image: url(../images/header-button.png) 0 16 0 16 stretch stretch;
 }
-.closeButton.selected
+.settings .closeButton.selected
 {
 	-webkit-border-image: url(../images/header-button-press.png) 0 16 0 16 stretch stretch;
 }
-.closeButton .icon
+.settings .closeButton .icon
 {
 	margin: 0px;
 	padding: 0px;
@@ -59,7 +155,7 @@
 	height: 23px;
 	background: url(../images/cancel-progress-icon.png) center center no-repeat;
 }
-.previewTitle
+.settings .previewTitle
 {
 	float: left;
 	display: block;
