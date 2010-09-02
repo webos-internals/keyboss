@@ -46,7 +46,7 @@ bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
   bool keydown = false;
   json_t *object;
  
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_int(object, "code", &code);
   json_get_bool(object, "keydown", &keydown);
   if (!is_valid_code(code)) {
@@ -82,7 +82,7 @@ bool set_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   int period = 0;
   bool use_default = false;
 
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_bool(object, "useDefault", &use_default);
   json_get_int(object, "delay", &delay);
   json_get_int(object, "period", &period);
@@ -113,7 +113,7 @@ bool change_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   ACTIONS action;
   int ret = 0;
 
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_string(object, "trigger", &param_trigger);
   json_get_int(object, "index", &param_index);
   json_get_string(object, "action", &param_action);
@@ -149,7 +149,7 @@ bool remove_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   ACTIONS action;
   int ret = 0;
 
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_string(object, "trigger", &param_trigger);
   json_get_int(object, "index", &param_index);
   json_get_string(object, "action", &param_action);
@@ -187,7 +187,7 @@ bool install_action(LSHandle* lshandle, LSMessage *message, void *ctx) {
   ACTIONS action = ACTION_NONE;
   int ret = 0;
 
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_string(object, "trigger", &param_trigger);
   json_get_string(object, "action", &param_action);
 
@@ -219,7 +219,7 @@ bool set_hold_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   json_t *object;
   int timeout = 0;
 
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_int(object, "timeout", &timeout);
 
   syslog(LOG_DEBUG, "set hold timeout: %dms", timeout);
@@ -241,7 +241,7 @@ bool set_tap_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   json_t *object;
   int timeout = 0;
 
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_int(object, "timeout", &timeout);
 
   syslog(LOG_DEBUG, "set tap timeout: %dms", timeout);
@@ -265,7 +265,7 @@ bool set_modifiers(LSHandle* lshandle, LSMessage *message, void *ctx) {
   char *hold = NULL;
   char *doubletap = NULL;
 
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message);
   json_get_string(object, "hold", &hold);
   json_get_string(object, "doubletap", &doubletap);
 
@@ -295,7 +295,7 @@ bool set_state(LSHandle* lshandle, LSMessage *message, void *ctx) {
   json_t *object;
   bool enable = false;
  
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_bool(object, "enable", &enable);
 
   if (enable)
@@ -317,7 +317,7 @@ bool set_prox_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   json_t *object;
   int prox_timeout = -1;
  
-  object = LSMessageGetPayloadJSON(message);
+  object = json_parse_document(LSMessageGetPayload(message));
   json_get_int(object, "value", &prox_timeout);
 
   if (prox_timeout < 0) {

@@ -1,0 +1,14 @@
+{
+  "role": {
+     "exeName":"/var/usr/sbin/org.webosinternals.keyboss",
+     "type": "regular",
+     "allowedNames": ["org.webosinternals.keyboss"]
+  },
+  "permissions": [
+    {
+      "service":"org.webosinternals.keyboss",
+      "inbound":["org.webosinternals.keyboss"],
+      "outbound":["org.webosinternals.keyboss"]
+    }
+  ]
+}
