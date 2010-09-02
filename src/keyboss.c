@@ -477,7 +477,7 @@ static void *pipe_keys(void *ptr) {
 
   k_fd=open(keypad_device, O_RDONLY); 
   if (k_fd < 0)  {
-    syslog(LOG_ERR, "open keypad err: %s", strerror(errno));
+    syslog(LOG_ERR, "open keypad (%s) err: %s", keypad_device, strerror(errno));
     goto err;
   }
 
