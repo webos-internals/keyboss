@@ -367,11 +367,13 @@ static int initialize() {
   memset(&tap_timer, 0, sizeof(struct action_timer));
   memset(&hold_timer, 0, sizeof(struct action_timer));
   memset(&keystate, 0, sizeof(KEYSTATE));
+  memset(&keypad_link[0], 0, 20);
 
   // Read the keypad0 symlink to find out the actual keyboard device
   ret = readlink("/dev/input/keypad0", keypad_link, sizeof (keypad_link));
   if (ret < 0)
     syslog(LOG_ERR, "Unable to read symlink /dev/input/keypad0");
+  syslog(LOG_DEBUG, "keypad_link %s", keypad_link);
   sprintf(keypad_device, "/dev/input/%s", keypad_link);
 
   tap_timer.evp.sigev_notify = SIGEV_THREAD;
