@@ -35,6 +35,6 @@ fi
 rm -f /etc/udev/rules.d/49-${PID}.rules
 
 # Remove the ls2 roles
-rm -f /var/palm/ls2/roles/pub/${SID}.json
-rm -f /var/palm/ls2/roles/prv/${SID}.json
+rm -f /var/palm/ls2/roles/pub/${PID}.json
+rm -f /var/palm/ls2/roles/prv/${PID}.json
 exit 0

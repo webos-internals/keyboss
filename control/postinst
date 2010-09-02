@@ -64,8 +64,8 @@ fi
 cp $APPS/usr/palm/applications/${PID}/udev/49-${PID}.rules /etc/udev/rules.d/
 
 # Install the ls2 roles
-cp $APPS/usr/palm/applications/${PID}/ls2/${SID}.json /var/palm/ls2/roles/prv/${PID}.json
-cp $APPS/usr/palm/applications/${PID}/ls2/${SID}.json /var/palm/ls2/roles/pub/${PID}.json
+cp $APPS/usr/palm/applications/${PID}/ls2/${PID}.json /var/palm/ls2/roles/prv/${PID}.json
+cp $APPS/usr/palm/applications/${PID}/ls2/${PID}.json /var/palm/ls2/roles/pub/${PID}.json
 
 # Start the service
 /sbin/start ${PID}
