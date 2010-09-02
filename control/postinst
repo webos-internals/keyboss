@@ -35,6 +35,10 @@ rm -f /etc/event.d/${PID} /var/palm/event.d/${PID} /var/palm/event.d/${PID}-sett
 # Remove the udev rules file
 rm -f /etc/udev/rules.d/49-${PID}.rules
 
+# Remove the ls2 roles
+rm -f /var/palm/ls2/roles/pub/${PID}.json
+rm -f /var/palm/ls2/roles/prv/${PID}.json
+
 # Install the keyboss executable
 mkdir -p /var/usr/sbin/
 install -m 755 $APPS/usr/palm/applications/${PID}/bin/${PID} /var/usr/sbin/${PID}
@@ -58,6 +62,10 @@ fi
 
 # Install the udev rules file
 cp $APPS/usr/palm/applications/${PID}/udev/49-${PID}.rules /etc/udev/rules.d/
+
+# Install the ls2 roles
+cp $APPS/usr/palm/applications/${PID}/ls2/${SID}.json /var/palm/ls2/roles/prv/${PID}.json
+cp $APPS/usr/palm/applications/${PID}/ls2/${SID}.json /var/palm/ls2/roles/pub/${PID}.json
 
 # Start the service
 /sbin/start ${PID}
