@@ -2,9 +2,12 @@ APP_ID=$(shell grep id appinfo.json | cut -d\" -f4)
 VERSION=$(shell grep version appinfo.json | cut -d\" -f4)
 META_VERSION=1
 
-doit: test palm-install
+doit: test palm-install palm-launch
 
 test: ipkgs/${APP_ID}_${VERSION}-${META_VERSION}_arm.ipk
+
+palm-launch:
+	palm-launch ${APP_ID}
 
 palm-install:
 	#pdk-install ipkgs/${APP_ID}_${VERSION}_arm.ipk
@@ -19,8 +22,9 @@ ipkgs/${APP_ID}_${VERSION}-${META_VERSION}_arm.ipk: service build/arm/CONTROL/co
 	cp *.png build/arm/usr/palm/applications/${APP_ID}
 	#cp -r images build/arm/usr/palm/applications/${APP_ID}
 	cp -r stylesheets build/arm/usr/palm/applications/${APP_ID}
-	cp -r upstart build/arm/usr/palm/applications/${APP_ID}
+	#cp -r upstart build/arm/usr/palm/applications/${APP_ID}
 	cp -r udev build/arm/usr/palm/applications/${APP_ID}
+	cp -r dbus build/arm/usr/palm/applications/${APP_ID}
 	mkdir -p build/arm/usr/palm/applications/${APP_ID}/bin
 	install -m 755 src/keyboss build/arm/usr/palm/applications/${APP_ID}/bin/${APP_ID}
 	mkdir -p ipkgs
