@@ -3,7 +3,9 @@ function SettingsAssistant() {
   // subtitle random list
   this.randomSub = 
   [
-	{weight: 1, text: $L('Random Subtitles FTW!')}
+	{weight: 1, text: $L('Random Subtitles FTW!')},
+  {weight: 1, text: $L('Look what I can do!')},
+  {weight: 1, text: $L('At your service')},
   ];
 	
   this.holdList = false;
@@ -72,6 +74,7 @@ SettingsAssistant.prototype.setup = function() {
   this.enableToggle = this.controller.get('enableToggle');
   this.previewHeader = this.controller.get('previewHeader');
   this.preview = this.controller.get('preview');
+  this.previewButton = this.controller.get('previewButton');
 
 	/* setup widgets here */
 
@@ -125,9 +128,10 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.controller.window, 'keydown', this.keyHandler);
   Mojo.Event.listen(this.controller.window, 'keyup', this.keyHandler);
 
-  Mojo.Event.listen(this.preview, Mojo.Event.tap, this.tapHandler);
+  Mojo.Event.listen(this.previewButton, Mojo.Event.tap, this.tapHandler);
 
   Mojo.Event.listen(this.preview, Mojo.Event.propertyChange, this.previewChange);
+
   service.getStatus(this.handleStatus.bind(this));
 };
 
@@ -426,8 +430,10 @@ SettingsAssistant.prototype.close = function() {
 }
 
 SettingsAssistant.prototype.handleStatus = function(payload) {
+  /*
   if (Mojo.Environment.DeviceInfo.modelNameAscii === "Device")
     return;
+    */
 
   if (!payload || !payload.returnValue) {
     this.callback(payload);

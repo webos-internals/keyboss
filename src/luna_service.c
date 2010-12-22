@@ -21,7 +21,6 @@ bool luna_service_initialize(const char *dbusAddress) {
 		goto end;
 
 	register_methods(serviceHandle, lserror);
-	//register_subscriptions(serviceHandle, lserror);
 
 	LSGmainAttachPalmService(serviceHandle, loop, &lserror);
 

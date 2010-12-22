@@ -7,8 +7,8 @@
   "permissions": [
     {
       "service":"org.webosinternals.keyboss",
-      "inbound":["org.webosinternals.keyboss"],
-      "outbound":["org.webosinternals.keyboss"]
+      "inbound":["*"],
+      "outbound":["*"]
     }
   ]
 }

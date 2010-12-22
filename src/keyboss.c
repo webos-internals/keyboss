@@ -483,9 +483,7 @@ static void *pipe_keys(void *ptr) {
     goto err;
   }
 
-  system("/sbin/stop hidd");
   u_fd=open(UINPUT_DEVICE ,O_WRONLY); 
-  system("/sbin/start hidd");
   if (u_fd < 0) {
     syslog(LOG_ERR, "open uinput err: %s", strerror(errno));
     goto err;
@@ -532,7 +530,10 @@ static void *pipe_keys(void *ptr) {
             fprintf(stderr, "error setrelbit %d\n", i);
 #endif
 
-  if (ioctl(u_fd,UI_DEV_CREATE) < 0)
+  system("/sbin/stop hidd");
+  ret = ioctl(u_fd, UI_DEV_CREATE);
+  system("/sbin/start hidd");
+  if (ret < 0)
     goto err;
 
   while (read(k_fd, &event, sizeof (struct input_event)) > 0) {
@@ -589,11 +590,13 @@ int send_key(__u16 code, __s32 value) {
 }
 
 void cleanup(int sig) {
+  syslog(LOG_DEBUG, "cleanup (sig %d)", sig);
   syslog(LOG_NOTICE, "cleanup (sig %d)", sig);
   system("/sbin/stop hidd");
   pthread_cancel(pipe_id);
   set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
   system("/sbin/start hidd");
+  syslog(LOG_NOTICE, "done cleanup");
   exit(0);
 }
 
