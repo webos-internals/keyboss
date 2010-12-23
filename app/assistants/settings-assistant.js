@@ -457,7 +457,7 @@ SettingsAssistant.prototype.ffCallback = function(payload) {
 
 SettingsAssistant.prototype.ffSetCallback = function(payload) {
   if (payload && !payload.returnValue) {
-    this.showError("There was an error trying to set the fat finger filter, this is most likely due to an unsupported kernel", null);
+    this.showError("There was an error trying to set the fat finger filter, this is most likely due to an unsupported kernel");
     this.ffToggleModel.value = !this.ffToggleModel.value;
     this.controller.modelChanged(this.ffToggleModel, this);
   }
@@ -477,7 +477,7 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
     this.showError("Service reports keypad device cannot be opened, unfortunately NO functionality will work", this.close.bind(this));
   }
   else if (payload.u_fd < 0) {
-    this.showError("Service reports uinput device cannot be opened.  The uinput module is required for KeyCaps functionality and keyboard emulation.  If you would like to use these functionalities, please make sure the Uinput module is installed via Preware and reboot.");
+    this.showError("Service reports uinput device cannot be opened.  The uinput module is required for KeyCaps functionality and keyboard emulation.  If you would like to use these functionalities, please make sure either the Uinput module is installed via Preware if using the stock Palm kernel or that you are running a custom kernel with uinput support included.");
   }
   else {
     this.actions = payload.actions.clone();
