@@ -60,6 +60,7 @@ SettingsAssistant.prototype.setup = function() {
 
   this.holdListModel = {items:[]};
   this.tapListModel = {items:[]};
+  this.ffToggleModel = {value: true};
 
 	/* use Mojo.View.render to render view templates and add them to the scene, if needed */
 	
@@ -95,7 +96,7 @@ SettingsAssistant.prototype.setup = function() {
   this.controller.setupWidget('holdList', this.actionsAttributes, this.holdListModel);
   this.controller.setupWidget('tapList', this.actionsAttributes, this.tapListModel);
   this.controller.setupWidget('enableToggle', {}, {value: true});
-  this.controller.setupWidget('ffToggle', {}, {value: false});
+  this.controller.setupWidget('ffToggle', {}, this.ffToggleModel);
   this.controller.setupWidget('preview', this.textAttributes, {});
 
 	/* add event handlers to listen to events from widgets */
@@ -115,6 +116,8 @@ SettingsAssistant.prototype.setup = function() {
   this.tapHandler = this.tapHandler.bindAsEventListener(this);
   this.previewChange = this.previewChange.bindAsEventListener(this);
   this.hidePreview = this.hidePreview.bind(this);
+
+  this.ffSetCallback = this.ffSetCallback.bind(this);
 
   this.preview.hide();
   this.previewHeader.hide();
@@ -142,6 +145,7 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.preview, Mojo.Event.propertyChange, this.previewChange);
 
   service.getStatus(this.handleStatus.bind(this));
+  service.getFF(this.ffCallback.bind(this));
 };
 
 SettingsAssistant.prototype.tapHandler = function() {
@@ -438,6 +442,27 @@ SettingsAssistant.prototype.close = function() {
   window.close();
 }
 
+SettingsAssistant.prototype.ffCallback = function(payload) {
+  if (payload && payload.returnValue) {
+    if (payload.enable && !this.ffToggleModel.value) {
+      this.ffToggleModel.value = true;
+      this.controller.modelChanged(this.tapModel, this);
+    }
+    if (!payload.enable && this.ffToggleModel.value) {
+      this.ffToggleModel.value = false;
+      this.controller.modelChanged(this.tapModel, this);
+    }
+  }
+}
+
+SettingsAssistant.prototype.ffSetCallback = function(payload) {
+  if (payload && !payload.returnValue) {
+    this.showError("There was an error trying to set the fat finger filter, this is most likely due to an unsupported kernel", null);
+    this.ffToggleModel.value = !this.ffToggleModel.value;
+    this.controller.modelChanged(this.ffToggleModel, this);
+  }
+}
+
 SettingsAssistant.prototype.handleStatus = function(payload) {
   /*
   if (Mojo.Environment.DeviceInfo.modelNameAscii === "Device")
@@ -523,14 +548,17 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
 }
 
 SettingsAssistant.prototype.ffChange = function(event) {
+  service.setFF(this.ffSetCallback, event.value);
+  /*
   if (event.value) {
     this.ffSlider.show();
-    //if (this.prefs.ffRate)
-      //service.setFF(this.callback, this.prefs.ffRate);
+    if (this.prefs.ffRate)
+      service.setFF(this.callback, this.prefs.ffRate);
   }
   else {
     this.ffSlider.hide();
   }
+  */
 }
 
 SettingsAssistant.prototype.enableChange = function(event) {

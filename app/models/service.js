@@ -130,3 +130,26 @@ service.changeAction = function(callback, trigger, index, action) {
   });
 }
 
+service.setFF = function(callback, enable) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'setFF',
+    parameters: {
+      enable: enable
+    },
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
+
+service.getFF = function(callback) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'getFF',
+    parameters: {},
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}

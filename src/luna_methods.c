@@ -61,6 +61,69 @@ bool emulate_key(LSHandle* lshandle, LSMessage *message, void *ctx) {
   return true;
 }
 
+bool getFF(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  int threshold = 0;
+  FILE *fd = NULL;
+  
+  fd = fopen("/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout", "r");
+
+  if (!fd) {
+    LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
+    return true;
+  }
+
+  fscanf(fd, "%d", &threshold);
+  fclose(fd);
+
+  if (threshold < 0) {
+    LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
+    return true;
+  }
+
+  memset(message_buf, 0, sizeof message_buf);
+  sprintf(message_buf, "{\"returnValue\": true, \"enable\": %s", (threshold) ? "true" : "false");
+
+  LSMessageRespond(message, message_buf, &lserror);
+
+  return true;
+}
+
+bool setFF(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  json_t *object;
+  bool enable = false;
+  FILE *fd = NULL;
+  
+  object = json_parse_document(LSMessageGetPayload(message));
+
+  if (!json_find_first_label(object, "enable")) {
+    LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
+    return true;
+  }
+
+  json_get_bool(object, "enable", &enable);
+
+  fd = fopen("/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout", "w");
+
+  if (!fd) {
+    LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
+    return true;
+  }
+
+  fprintf(fd, "%d", (enable) ? 1 : 0);
+  fclose(fd);
+
+  memset(message_buf, 0, sizeof message_buf);
+  sprintf(message_buf, "{\"returnValue\": true, \"enable\": %s", (enable) ? "true" : "false");
+
+  LSMessageRespond(message, message_buf, &lserror);
+
+  return true;
+}
+
 bool get_repeat_rate(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit(&lserror);
@@ -412,6 +475,8 @@ LSMethod luna_methods[] = {
   {"emulateKey", emulate_key},
   {"getRepeatRate", get_repeat_rate},
   {"setRepeatRate", set_repeat_rate},
+  {"getFF", getFF},
+  {"setFF", setFF},
   //{"setModifiers", set_modifiers},
   {"installAction", install_action},
   {"removeAction", remove_action},
