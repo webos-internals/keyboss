@@ -2,16 +2,9 @@
 description "KeyBoss: Complete Keyboard Control"
 author "Eric Gaudet"
 
-start on stopped org.webosinternals.modules.uinput
-
-# Stop when the Software Update tool is about to install an update.  The tool
-# uses upstart to restart jobs when the installation is complete.
+start on stopped finish
 stop on started start_update
-
-respawn
-
-script
 
 exec /var/usr/sbin/org.webosinternals.keyboss
 
-end script
+respawn

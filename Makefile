@@ -2,6 +2,7 @@ APP_ID=$(shell grep id appinfo.json | cut -d\" -f4)
 VERSION=$(shell grep version appinfo.json | cut -d\" -f4)
 META_VERSION=1
 
+#default: doit
 default: doit-tcp
 
 doit: package-arm palm-install palm-launch
@@ -34,45 +35,26 @@ palm-launch-tcp:
 palm-install-tcp:
 	palm-install -d tcp ipkgs/${APP_ID}_${VERSION}-${META_VERSION}_i686.ipk
 
-ipkgs/${APP_ID}_${VERSION}-${META_VERSION}_i686.ipk: service build/i686/CONTROL/control
-	cp control/* build/i686/CONTROL/
-	mkdir -p build/i686/usr/palm/applications/${APP_ID}
-	cp -r app build/i686/usr/palm/applications/${APP_ID}
-	cp *.json build/i686/usr/palm/applications/${APP_ID}
-	cp *.html build/i686/usr/palm/applications/${APP_ID}
-	cp *.png build/i686/usr/palm/applications/${APP_ID}
-	cp -r images build/i686/usr/palm/applications/${APP_ID}
-	cp -r stylesheets build/i686/usr/palm/applications/${APP_ID}
-	cp -r udev build/i686/usr/palm/applications/${APP_ID}
-	cp -r dbus build/i686/usr/palm/applications/${APP_ID}
-	mkdir -p build/i686/usr/palm/applications/${APP_ID}/bin
-	install -m 755 src/keyboss build/i686/usr/palm/applications/${APP_ID}/bin/${APP_ID}
+ipkgs/${APP_ID}_${VERSION}-${META_VERSION}_%.ipk: service build/%/CONTROL/control
+	cp control/* build/$*/CONTROL/
+	mkdir -p build/$*/usr/palm/applications/${APP_ID}
+	cp -r app build/$*/usr/palm/applications/${APP_ID}
+	cp *.json build/$*/usr/palm/applications/${APP_ID}
+	cp *.html build/$*/usr/palm/applications/${APP_ID}
+	cp *.png build/$*/usr/palm/applications/${APP_ID}
+	cp -r images build/$*/usr/palm/applications/${APP_ID}
+	cp -r stylesheets build/$*/usr/palm/applications/${APP_ID}
+	cp -r upstart build/$*/usr/palm/applications/${APP_ID}
+	cp -r udev build/$*/usr/palm/applications/${APP_ID}
+	cp -r dbus build/$*/usr/palm/applications/${APP_ID}
+	mkdir -p build/$*/usr/palm/applications/${APP_ID}/bin
+	install -m 755 src/keyboss build/$*/usr/palm/applications/${APP_ID}/bin/${APP_ID}
 	mkdir -p ipkgs
-	( cd build; TAR_OPTIONS="--wildcards --mode=g-s" ipkg-build -o 0 -g 0 -p i686 )
-	mv build/${APP_ID}_${VERSION}-${META_VERSION}_i686.ipk $@
+	( cd build; TAR_OPTIONS="--wildcards --mode=g-s" ipkg-build -o 0 -g 0 -p $* )
+	mv build/${APP_ID}_${VERSION}-${META_VERSION}_$*.ipk $@
 	ipkg-make-index -v -p ipkgs/Packages ipkgs
 	#rsync -av ipkgs/ /source/www/feeds/test
 
-ipkgs/${APP_ID}_${VERSION}-${META_VERSION}_arm.ipk: service build/arm/CONTROL/control
-	cp control/* build/arm/CONTROL/
-	mkdir -p build/arm/usr/palm/applications/${APP_ID}
-	cp -r app build/arm/usr/palm/applications/${APP_ID}
-	cp *.json build/arm/usr/palm/applications/${APP_ID}
-	cp *.html build/arm/usr/palm/applications/${APP_ID}
-	cp *.png build/arm/usr/palm/applications/${APP_ID}
-	cp -r images build/arm/usr/palm/applications/${APP_ID}
-	cp -r stylesheets build/arm/usr/palm/applications/${APP_ID}
-	#cp -r upstart build/arm/usr/palm/applications/${APP_ID}
-	cp -r udev build/arm/usr/palm/applications/${APP_ID}
-	cp -r dbus build/arm/usr/palm/applications/${APP_ID}
-	mkdir -p build/arm/usr/palm/applications/${APP_ID}/bin
-	install -m 755 src/keyboss build/arm/usr/palm/applications/${APP_ID}/bin/${APP_ID}
-	mkdir -p ipkgs
-	( cd build; TAR_OPTIONS="--wildcards --mode=g-s" ipkg-build -o 0 -g 0 -p arm )
-	mv build/${APP_ID}_${VERSION}-${META_VERSION}_arm.ipk $@
-	ipkg-make-index -v -p ipkgs/Packages ipkgs
-	#rsync -av ipkgs/ /source/www/feeds/test
-	
 build/%/CONTROL/control:
 	mkdir -p build/$*/CONTROL
 	rm -f $@

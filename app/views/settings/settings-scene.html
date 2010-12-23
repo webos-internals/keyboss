@@ -33,15 +33,14 @@
     <div class="palm-list" id="holdList" x-mojo-element="List"></div>
   </div>
 
-  <div class="palm-group" id="holdTimeGroup">
+  <div class="palm-group" id="holdTimeGroup" style="display:none">
     <div class="palm-group-title"><span x-mojo-loc=''>Hold Timings</span></div>
 
     <div class="palm-list">
       <div id="holdTimeoutRow" class="palm-row single">
         <div class="palm-row-wrapper">
 					<div class="title" x-mojo-loc=''>Hold Interval</div>
-          <div x-mojo-element="Slider" id="holdSlider" class="palm-slider">
-          </div>
+          <div x-mojo-element="Slider" id="holdSlider" class="palm-slider"></div>
         </div>
       </div>
     </div>
@@ -55,7 +54,7 @@
     </div>
   </div>
 
-  <div class="palm-group" id="tapTimeGroup">
+  <div class="palm-group" id="tapTimeGroup" style="display:none">
     <div class="palm-group-title">
       <span x-mojo-loc=''>Tap Timings</span>
     </div>
@@ -72,9 +71,7 @@
   </div>
 
   <div class="palm-group">
-    <div class="palm-group-title">
-      <span x-mojo-loc=''>Repeat Rate</span>
-    </div>
+    <div class="palm-group-title"><span x-mojo-loc=''>Repeat Rate</span></div>
 
     <div class="palm-list">
       <div id="delaySliderRow" class="palm-row first">
@@ -93,6 +90,19 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <div class="palm-group">
+    <div class="palm-group-title"><span x-mojo-loc=''>Fat Finger Filter</span></div>
+    <div class="palm-list">
+      <div class="palm-row single">
+        <div class="palm-row-wrapper">
+          <div x-mojo-element="ToggleButton" id="ffToggle"></div>
+          <div class="title left">Filter</div>
+          <div x-mojo-element="Slider" class="palm-slider" style="display:none" id="ffSlider"></div>
+        </div>
+      </div>
     </div>
   </div>
 

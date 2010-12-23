@@ -71,7 +71,9 @@ SettingsAssistant.prototype.setup = function() {
   this.delaySlider = this.controller.get('delaySlider');
   this.tapSlider = this.controller.get('tapSlider');
   this.holdSlider = this.controller.get('holdSlider');
+  this.ffSlider = this.controller.get('ffSlider');
   this.enableToggle = this.controller.get('enableToggle');
+  this.ffToggle = this.controller.get('ffToggle');
   this.previewHeader = this.controller.get('previewHeader');
   this.preview = this.controller.get('preview');
   this.previewButton = this.controller.get('previewButton');
@@ -83,14 +85,17 @@ SettingsAssistant.prototype.setup = function() {
   this.freqModel = {value: 100};
   this.tapModel = {value: 250};
   this.holdModel = {value: 250};
+  this.ffModel = {value: 100};
 
   this.controller.setupWidget('delaySlider', this.sliderAttributes, this.delayModel);
   this.controller.setupWidget('freqSlider', this.sliderAttributes, this.freqModel);
   this.controller.setupWidget('tapSlider', this.sliderAttributes, this.tapModel);
   this.controller.setupWidget('holdSlider', this.sliderAttributes, this.holdModel);
+  this.controller.setupWidget('ffSlider', this.sliderAttributes, this.ffModel);
   this.controller.setupWidget('holdList', this.actionsAttributes, this.holdListModel);
   this.controller.setupWidget('tapList', this.actionsAttributes, this.tapListModel);
   this.controller.setupWidget('enableToggle', {}, {value: true});
+  this.controller.setupWidget('ffToggle', {}, {value: false});
   this.controller.setupWidget('preview', this.textAttributes, {});
 
 	/* add event handlers to listen to events from widgets */
@@ -98,6 +103,8 @@ SettingsAssistant.prototype.setup = function() {
   this.handleTapTimeoutChange = this.tapTimeoutChange.bindAsEventListener(this);
   this.handleHoldTimeoutChange = this.holdTimeoutChange.bindAsEventListener(this);
   this.handleEnableChange = this.enableChange.bindAsEventListener(this);
+  this.handleFfChange = this.ffChange.bindAsEventListener(this);
+  this.handleFfRateChange = this.ffRateChange.bindAsEventListener(this);
 
   this.holdListFinishAdd = this.holdListFinishAdd.bind(this);
   this.holdListFinishChange = this.holdListFinishChange.bind(this);
@@ -116,7 +123,9 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.freqSlider, 'mojo-property-change', this.handleRateChange);
   Mojo.Event.listen(this.tapSlider, 'mojo-property-change', this.handleTapTimeoutChange);
   Mojo.Event.listen(this.holdSlider, 'mojo-property-change', this.handleHoldTimeoutChange);
+  Mojo.Event.listen(this.ffSlider, 'mojo-property-change', this.handleFfRateChange);
   Mojo.Event.listen(this.enableToggle, 'mojo-property-change', this.handleEnableChange);
+  Mojo.Event.listen(this.ffToggle, 'mojo-property-change', this.handleFfChange);
   Mojo.Event.listen(this.holdList, Mojo.Event.listAdd, this.holdListAdd.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.propertyChanged,	this.holdListChange.bindAsEventListener(this));
   Mojo.Event.listen(this.holdList, Mojo.Event.listDelete,			this.holdListDelete.bindAsEventListener(this));
@@ -513,6 +522,17 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
   service.getRepeatRate(this.handleGet.bind(this));
 }
 
+SettingsAssistant.prototype.ffChange = function(event) {
+  if (event.value) {
+    this.ffSlider.show();
+    //if (this.prefs.ffRate)
+      //service.setFF(this.callback, this.prefs.ffRate);
+  }
+  else {
+    this.ffSlider.hide();
+  }
+}
+
 SettingsAssistant.prototype.enableChange = function(event) {
   service.setState(this.callback, event.value);
 }
@@ -523,6 +543,11 @@ SettingsAssistant.prototype.holdTimeoutChange = function(event) {
 
 SettingsAssistant.prototype.tapTimeoutChange = function(event) {
   service.setTapTimeout(this.callback, Math.floor(event.value));
+}
+
+SettingsAssistant.prototype.ffRateChange = function(event) {
+  this.prefs.ffRate = Math.floor(event.value);
+  this.cookie.put(this.prefs);
 }
 
 SettingsAssistant.prototype.rateChange = function(event) {
