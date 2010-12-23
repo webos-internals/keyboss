@@ -176,6 +176,7 @@ SettingsAssistant.prototype.previewChange = function(event) {
 
 SettingsAssistant.prototype.resetToDefaults = function() {
   service.resetToDefaults(this.callback);
+  service.stickSettings(this.callback);
   service.getStatus(this.handleStatus.bind(this));
 }
 
