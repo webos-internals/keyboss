@@ -96,7 +96,7 @@ SettingsAssistant.prototype.setup = function() {
   };
   this.resetModel = {
     buttonLabel: "Reset to Defaults",
-    buttonClass: 'negative',
+    buttonClass: 'primary',
     disabled: false
   };
 
@@ -130,6 +130,7 @@ SettingsAssistant.prototype.setup = function() {
   this.previewChange = this.previewChange.bindAsEventListener(this);
   this.hidePreview = this.hidePreview.bind(this);
   this.resetToDefaults = this.resetToDefaults.bind(this);
+  this.resetButtonTapped = this.resetButtonTapped.bind(this);
 
   this.ffSetCallback = this.ffSetCallback.bind(this);
 
@@ -157,7 +158,7 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.previewButton, Mojo.Event.tap, this.tapHandler);
 
   Mojo.Event.listen(this.preview, Mojo.Event.propertyChange, this.previewChange);
-  Mojo.Event.listen(this.resetButton, Mojo.Event.tap, this.resetToDefaults);
+  Mojo.Event.listen(this.resetButton, Mojo.Event.tap, this.resetButtonTapped);
 
   service.getStatus(this.handleStatus.bind(this));
   service.getFF(this.ffCallback.bind(this));
@@ -174,10 +175,22 @@ SettingsAssistant.prototype.previewChange = function(event) {
   }
 }
 
-SettingsAssistant.prototype.resetToDefaults = function() {
-  service.resetToDefaults(this.callback);
-  service.stickSettings(this.callback);
-  service.getStatus(this.handleStatus.bind(this));
+SettingsAssistant.prototype.resetButtonTapped = function(event) {
+  this.controller.showAlertDialog({
+    title: $LL("Reset To Defaults"),
+    message: "This will reset all settings to default/stock options.  The change will be persistent.  Would you like to reset all settings to default/stock?",
+          onChoose: this.resetToDefaults,
+          choices: [{label: $LL("YES"), value:true, type: "affirmative"},
+                    {label: $LL("CANCEL"), value:false, type: "negative"}]
+        });
+}
+
+SettingsAssistant.prototype.resetToDefaults = function(value) {
+  if (value) {
+    service.resetToDefaults(this.callback);
+    service.stickSettings(this.callback);
+    service.getStatus(this.handleStatus.bind(this));
+  }
 }
 
 SettingsAssistant.prototype.hidePreview = function() {

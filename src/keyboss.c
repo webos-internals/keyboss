@@ -608,6 +608,9 @@ void reset_to_defaults() {
   keystate.tap.threshold = DEFAULT_TAP_TIMEOUT;
   keystate.hold.threshold = DEFAULT_HOLD_TIMEOUT;
 
+  current_delay = DEFAULT_DELAY;
+  current_period = DEFAULT_PERIOD;
+
   set_fffilter(true);
 }
 
