@@ -9,13 +9,15 @@ function StartupAssistant()
     this.newMessages =
 	[
 		// Don't forget the comma on all but the last entry
+    { version: '0.2.9', log: [ 'Added fat finger filter control',
+                               'Added persistent settings',
+                               'Added ability to reset to defaults',
+                               'Added code to disable after unclean shutdown' ]},
     { version: '0.2.6', log: [ 'Fixed removal of tap action' ]},
-    { version: '0.2.5', log: [ 
-                               'Added preview header for testing settings',
+    { version: '0.2.5', log: [ 'Added preview header for testing settings',
                                'Changed logic to not cycle when only 1 action active',
                                'Fixed tap action bug that missed keys in universal search',
-                               'Added start/changelog scene',
-                             ]},
+                               'Added start/changelog scene' ]},
     { version: '0.2.4', log: [ 'Added Enable/Disable toggle' ]},
     { version: '0.2.0', log: [ 'Re-designed with trigger/action lists']},
 		{ version: '0.1.0', log: [ 'Initial Release!' ] }

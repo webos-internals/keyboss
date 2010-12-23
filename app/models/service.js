@@ -153,3 +153,36 @@ service.getFF = function(callback) {
 
   return request;
 }
+
+service.stickSettings = function(callback) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'stickSettings',
+    parameters: {},
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
+
+service.unstickSettings = function(callback) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'unstickSettings',
+    parameters: {},
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}
+
+service.resetToDefaults = function(callback) {
+  var request = new Mojo.Service.Request(service.identifier, {
+    method: 'resetToDefaults',
+    parameters: {},
+    onSuccess: callback,
+    onFailure: callback
+  });
+
+  return request;
+}

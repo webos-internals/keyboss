@@ -1,9 +1,9 @@
 APP_ID=$(shell grep id appinfo.json | cut -d\" -f4)
 VERSION=$(shell grep version appinfo.json | cut -d\" -f4)
-META_VERSION=1
+META_VERSION=2
 
-#default: doit
-default: doit-tcp
+default: doit
+#default: doit-tcp
 
 doit: package-arm palm-install palm-launch
 
@@ -49,6 +49,7 @@ ipkgs/${APP_ID}_${VERSION}-${META_VERSION}_%.ipk: service build/%/CONTROL/contro
 	cp -r dbus build/$*/usr/palm/applications/${APP_ID}
 	mkdir -p build/$*/usr/palm/applications/${APP_ID}/bin
 	install -m 755 src/keyboss build/$*/usr/palm/applications/${APP_ID}/bin/${APP_ID}
+	install -m 755 src/restart_hidd build/$*/usr/palm/applications/${APP_ID}/bin/restart_hidd
 	mkdir -p ipkgs
 	( cd build; TAR_OPTIONS="--wildcards --mode=g-s" ipkg-build -o 0 -g 0 -p $* )
 	mv build/${APP_ID}_${VERSION}-${META_VERSION}_$*.ipk $@

@@ -9,6 +9,9 @@ APPS=/media/cryptofs/apps
 # Remove the service executable
 rm -f /var/usr/sbin/${SID}
 
+# Remove the restart hidd script
+rm -f /var/usr/sbin/restart_hidd
+
 # Remove the dbus service
 rm -f /var/palm/system-ervices/${SID}.service
 

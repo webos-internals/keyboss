@@ -1,1 +1,1 @@
-SUBSYSTEM=="input", KERNEL=="event[0-9]*", SYSFS{name}=="WebOS Internals KeyBoss", SYMLINK+="input/keypad0"
+SUBSYSTEM=="input", KERNEL=="event[0-9]*", SYSFS{name}=="WebOS Internals KeyBoss", SYMLINK+="input/keypad0", RUN+="/var/usr/sbin/restart_hidd"

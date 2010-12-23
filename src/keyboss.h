@@ -6,6 +6,8 @@
 
 #define DBUS_ADDRESS "org.webosinternals.keyboss"
 #define UINPUT_DEVICE "/dev/input/uinput"
+#define PROX_TIMEOUT "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout"
+#define ARGS_FILE "/var/preferences/org.webosinternals.keyboss/keyboss-args"
 
 /* FIXME: Get these macros from Palm patched input.h */
 
@@ -39,6 +41,9 @@ typedef enum {
   ACTION_FUNCTION, 
   ACTION_CAPITALIZE
 } ACTIONS;
+
+#define IS_VALID_ACTION(action) (action == ACTION_DEFAULT || action == ACTION_FUNCTION || action == ACTION_CAPITALIZE)
+
 
 struct key_modifier {
   int count;
@@ -76,6 +81,8 @@ extern int k_fd;
 extern KEYSTATE keystate;
 extern struct action_timer tap_timer;
 extern struct action_timer hold_timer;
+extern pthread_t pipe_id;
+extern void reset_to_defaults(void);
 
 /* function declarations */
 bool is_valid_code(int code);

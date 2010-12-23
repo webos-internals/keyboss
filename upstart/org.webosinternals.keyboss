@@ -2,9 +2,33 @@
 description "KeyBoss: Complete Keyboard Control"
 author "Eric Gaudet"
 
+
 start on stopped finish
 stop on started start_update
 
-exec /var/usr/sbin/org.webosinternals.keyboss
+script
+
+  mkdir -p /var/preferences/org.webosinternals.keyboss
+  if [ ! -f /var/preferences/org.webosinternals.keyboss/keyboss-args ]; then
+    echo "" > /var/preferences/org.webosinternals.keyboss/keyboss-args
+  fi
+
+  # If it was a clean shutdown we can enable KeyBoss to take control of keypad device
+  if [ "`/usr/bin/lunaprop -m com.palm.properties.prevBootPanicked`" = "false" ] && \
+     [ "`/usr/bin/lunaprop -m com.palm.properties.prevShutdownClean`" = "true" ] && \
+     [ "`/usr/bin/lunaprop -m -n com.palm.system last_umount_clean`" = "true" ]; then
+    enable="-e"
+  fi
+
+  exec /var/usr/sbin/org.webosinternals.keyboss `cat /var/preferences/org.webosinternals.keyboss/keyboss-args`$enable
+
+end script
+
+post-stop script
+
+  /sbin/stop hidd
+  /sbin/start hidd
+
+end script
 
 respawn

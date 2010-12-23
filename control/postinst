@@ -30,6 +30,9 @@ rm -f /etc/udev/rules.d/49-${SID}.rules
 mkdir -p /var/usr/sbin/
 install -m 755 $APPS/usr/palm/applications/${SID}/bin/${SID} /var/usr/sbin/${SID}
 
+# Install the hidd restart script
+install -m 755 $APPS/usr/palm/applications/${SID}/bin/restart_hidd /var/usr/sbin/restart_hidd
+
 # Install the dbus service
 mkdir -p /var/palm/system-services
 cp $APPS/usr/palm/applications/${SID}/dbus/${SID}.service /var/palm/system-services/${SID}.service

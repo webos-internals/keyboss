@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <malloc.h>
 #include <syslog.h>
 #include "luna_service.h"
 #include "keyboss.h"
@@ -67,7 +69,7 @@ bool getFF(LSHandle* lshandle, LSMessage *message, void *ctx) {
   int threshold = 0;
   FILE *fd = NULL;
   
-  fd = fopen("/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout", "r");
+  fd = fopen(PROX_TIMEOUT, "r");
 
   if (!fd) {
     LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
@@ -106,7 +108,7 @@ bool setFF(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   json_get_bool(object, "enable", &enable);
 
-  fd = fopen("/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout", "w");
+  fd = fopen(PROX_TIMEOUT, "w");
 
   if (!fd) {
     LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
@@ -375,7 +377,6 @@ bool set_state(LSHandle* lshandle, LSMessage *message, void *ctx) {
 bool set_prox_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSError lserror;
   LSErrorInit (&lserror);
-  char *sysfs_path = "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout";
   FILE *fd;
   json_t *object;
   int prox_timeout = -1;
@@ -388,11 +389,90 @@ bool set_prox_timeout(LSHandle* lshandle, LSMessage *message, void *ctx) {
     return true;
   }
 
-  fd = fopen(sysfs_path, "w");
+  fd = fopen(PROX_TIMEOUT, "w");
   if (!fd || fprintf(fd, "%d", prox_timeout) < 0) {
     LSMessageReply(lshandle, message, "{\"returnValue\": false, \"errorCode\": -1, \"errorText\": \"Error writing to prox_timeout\"}", &lserror);
     return true;
   }
+
+  LSMessageReply(lshandle, message, "{\"returnValue\": true}", &lserror);
+  return true;
+}
+
+bool stickSettings(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  int i;
+  int prox_timeout = -1;
+  bool ffDisable = false;
+  struct key_modifier *hold = &keystate.hold;
+  struct key_modifier *tap = &keystate.tap;
+  int tap_timeout = 0;
+  int hold_timeout = 0;
+  char *args = NULL;
+  FILE *fd;
+
+  fd = fopen(PROX_TIMEOUT, "r");
+  if (fd) {
+    fscanf(fd, "%d", &prox_timeout);
+    fclose(fd);
+    if (prox_timeout == 0)
+      ffDisable = true;
+  }
+
+  for (i=0; i<hold->num_active; i++)
+    asprintf(&args, "%s -h %d", (args) ? args : "", hold->actions[i]);
+
+  for (i=0; i<tap->num_active; i++)
+    asprintf(&args, "%s -h %d", (args) ? args : "", tap->actions[i]);
+
+  hold_timeout = hold_timer.value.it_value.tv_sec * 1000 + hold_timer.value.it_value.tv_nsec / 1000000;
+  tap_timeout = tap_timer.value.it_value.tv_sec * 1000 + tap_timer.value.it_value.tv_nsec / 1000000;
+
+  asprintf(&args, "%s -H %d -T %d -r %d %d %s", 
+      (args) ? args : "", 
+      hold_timeout, 
+      tap_timeout, 
+      current_delay, 
+      current_period, 
+      (ffDisable) ? "-f" : "");
+
+  fd = fopen(ARGS_FILE, "w");
+  if (!fd) {
+    LSMessageReply(lshandle, message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
+    free(args);
+    return true;
+  }
+
+  fprintf(fd, "%s", args);
+  fclose(fd);
+  free(args);
+  LSMessageReply(lshandle, message, "{\"returnValue\": true}", &lserror);
+  return true;
+}
+
+bool unstickSettings(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+  FILE *fd;
+
+  fd = fopen(ARGS_FILE, "w");
+  if (!fd) {
+    LSMessageReply(lshandle, message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
+    return true;
+  }
+
+  fprintf(fd, "");
+  fclose(fd);
+  LSMessageReply(lshandle, message, "{\"returnValue\": true}", &lserror);
+  return true;
+}
+
+bool resetToDefaults(LSHandle* lshandle, LSMessage *message, void *ctx) {
+  LSError lserror;
+  LSErrorInit(&lserror);
+
+  reset_to_defaults();
 
   LSMessageReply(lshandle, message, "{\"returnValue\": true}", &lserror);
   return true;
@@ -404,7 +484,6 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   LSErrorInit(&lserror);
   int i;
   int count = 0;
-  char *sysfs_path = "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout";
   FILE *fd;
   int prox_timeout = -1;
   char buffer[4];
@@ -417,9 +496,11 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   int hold_timeout = 0;
 
   syslog(LOG_DEBUG, "in get status");
-  fd = fopen(sysfs_path, "w");
-  if (fd)
+  fd = fopen(PROX_TIMEOUT, "r");
+  if (fd) {
+    fscanf(fd, "%d", &prox_timeout);
     fclose(fd);
+  }
 
   syslog(LOG_DEBUG, "get actions");
   count = 0;
@@ -459,7 +540,7 @@ bool get_status(LSHandle* lshandle, LSMessage *message, void *ctx) {
   hold_timeout = hold_timer.value.it_value.tv_sec * 1000 + hold_timer.value.it_value.tv_nsec / 1000000;
 
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"u_fd\": %d, \"k_fd\": %d, \"max_actions\": %d, \"actions\": %s, \"installed_hold\": %s, \"installed_tap\": %s, \"tap_timeout\": %d, \"hold_timeout\": %d, \"hold_delay\": %d, \"hold_interval\": %d, \"prox_timeout\": %d}", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, tap_timeout, hold_timeout, current_delay, current_period, prox_timeout);
+  sprintf(message_buf, "{\"returnValue\": true, \"enabled\": %s, \"u_fd\": %d, \"k_fd\": %d, \"max_actions\": %d, \"actions\": %s, \"installed_hold\": %s, \"installed_tap\": %s, \"tap_timeout\": %d, \"hold_timeout\": %d, \"hold_delay\": %d, \"hold_interval\": %d, \"prox_timeout\": %d}", (pipe_id) ? "true" : "false", u_fd, k_fd, MAX_ACTIONS, actions, installed_hold, installed_tap, tap_timeout, hold_timeout, current_delay, current_period, prox_timeout);
 
   LSMessageRespond(message, message_buf, &lserror);
   if (actions) free(actions);
@@ -484,6 +565,9 @@ LSMethod luna_methods[] = {
   {"setTapTimeout", set_tap_timeout},
   {"setHoldTimeout", set_hold_timeout},
   {"setProxTimeout", set_prox_timeout},
+  {"stickSettings", stickSettings},
+  {"unstickSettings", unstickSettings},
+  {"resetToDefaults", resetToDefaults},
   {0,0}
 };
 

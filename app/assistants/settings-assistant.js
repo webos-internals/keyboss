@@ -19,8 +19,8 @@ function SettingsAssistant() {
   this.actions = [];
   this.maxActions = 0;
 
-  this.cookie = new preferenceCookie();
-  this.prefs = this.cookie.get();
+  //this.cookie = new preferenceCookie();
+  //this.prefs = this.cookie.get();
 }
 
 SettingsAssistant.prototype.setup = function() {
@@ -78,6 +78,7 @@ SettingsAssistant.prototype.setup = function() {
   this.previewHeader = this.controller.get('previewHeader');
   this.preview = this.controller.get('preview');
   this.previewButton = this.controller.get('previewButton');
+  this.resetButton = this.controller.get('resetButton');
 
 	/* setup widgets here */
 
@@ -87,6 +88,17 @@ SettingsAssistant.prototype.setup = function() {
   this.tapModel = {value: 250};
   this.holdModel = {value: 250};
   this.ffModel = {value: 100};
+  this.enableModel = {value: true};
+
+  this.resetAttributes = {
+    disabledProperty: 'disabled',
+    type: 'default'
+  };
+  this.resetModel = {
+    buttonLabel: "Reset to Defaults",
+    buttonClass: 'negative',
+    disabled: false
+  };
 
   this.controller.setupWidget('delaySlider', this.sliderAttributes, this.delayModel);
   this.controller.setupWidget('freqSlider', this.sliderAttributes, this.freqModel);
@@ -95,9 +107,10 @@ SettingsAssistant.prototype.setup = function() {
   this.controller.setupWidget('ffSlider', this.sliderAttributes, this.ffModel);
   this.controller.setupWidget('holdList', this.actionsAttributes, this.holdListModel);
   this.controller.setupWidget('tapList', this.actionsAttributes, this.tapListModel);
-  this.controller.setupWidget('enableToggle', {}, {value: true});
+  this.controller.setupWidget('enableToggle', {}, this.enableModel);
   this.controller.setupWidget('ffToggle', {}, this.ffToggleModel);
   this.controller.setupWidget('preview', this.textAttributes, {});
+  this.controller.setupWidget('resetButton', this.resetAttributes, this.resetModel);
 
 	/* add event handlers to listen to events from widgets */
   this.handleRateChange = this.rateChange.bindAsEventListener(this);
@@ -108,14 +121,15 @@ SettingsAssistant.prototype.setup = function() {
   this.handleFfRateChange = this.ffRateChange.bindAsEventListener(this);
 
   this.holdListFinishAdd = this.holdListFinishAdd.bind(this);
-  this.holdListFinishChange = this.holdListFinishChange.bind(this);
+  //this.holdListFinishChange = this.holdListFinishChange.bind(this);
   this.tapListFinishAdd = this.tapListFinishAdd.bind(this);
-  this.tapListFinishChange = this.tapListFinishChange.bind(this);
+  //this.tapListFinishChange = this.tapListFinishChange.bind(this);
 
   this.keyHandler = this.keyHandler.bindAsEventListener(this);
   this.tapHandler = this.tapHandler.bindAsEventListener(this);
   this.previewChange = this.previewChange.bindAsEventListener(this);
   this.hidePreview = this.hidePreview.bind(this);
+  this.resetToDefaults = this.resetToDefaults.bind(this);
 
   this.ffSetCallback = this.ffSetCallback.bind(this);
 
@@ -143,6 +157,7 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.previewButton, Mojo.Event.tap, this.tapHandler);
 
   Mojo.Event.listen(this.preview, Mojo.Event.propertyChange, this.previewChange);
+  Mojo.Event.listen(this.resetButton, Mojo.Event.tap, this.resetToDefaults);
 
   service.getStatus(this.handleStatus.bind(this));
   service.getFF(this.ffCallback.bind(this));
@@ -157,6 +172,11 @@ SettingsAssistant.prototype.previewChange = function(event) {
   if (event.value == '') {
     this.hidePreview();
   }
+}
+
+SettingsAssistant.prototype.resetToDefaults = function() {
+  service.resetToDefaults(this.callback);
+  service.getStatus(this.handleStatus.bind(this));
 }
 
 SettingsAssistant.prototype.hidePreview = function() {
@@ -206,6 +226,7 @@ SettingsAssistant.prototype.setupActionWidgets = function(payload) {
   this.controller.modelChanged(this.tapListModel, this);
 }
 
+/*
 SettingsAssistant.prototype.holdListFinishChange = function(payload)
 {
   if (payload.returnValue)
@@ -213,12 +234,15 @@ SettingsAssistant.prototype.holdListFinishChange = function(payload)
   else
     Mojo.Log.error(payload.errorText);
 }
+*/
 
 SettingsAssistant.prototype.holdListChange = function(event) {
   var index = event.model.index;
 
-  if (event.property === 'value')
-    service.changeAction(this.holdListFinishChange, 'hold', index, this.actions[event.value]);
+  if (event.property === 'value') {
+    service.changeAction(this.callback, 'hold', index, this.actions[event.value]);
+    service.stickSettings(this.callback);
+  }
 }
 
 SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
@@ -228,7 +252,7 @@ SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
     this.holdListCount--;
     if (!this.holdListCount)
       this.holdTimeGroup.hide();
-	  this.holdListSave();
+	  //this.holdListSave();
   }
   else {
     Mojo.Log.error(payload.errorText);
@@ -238,8 +262,10 @@ SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
 SettingsAssistant.prototype.holdListDelete = function(event)
 {
   service.removeAction(this.holdListFinishDelete.bind(this,event.item.id,event.index), 'hold', event.index);
+  service.stickSettings(this.callback);
 }
 
+/*
 SettingsAssistant.prototype.holdListSave = function()
 {
   return;
@@ -280,6 +306,7 @@ SettingsAssistant.prototype.holdListSave = function()
 	this.cookie.put(this.prefs);
 	//this.validateIdentity();
 }
+*/
 
 SettingsAssistant.prototype.holdListBuildList = function() {
   this.holdListModel.items = [];
@@ -302,7 +329,7 @@ SettingsAssistant.prototype.holdListFinishAdd = function(payload) {
     this.holdList.mojo.noticeUpdatedItems(0, this.holdListModel.items);
     this.holdList.mojo.setLength(this.holdListModel.items.length);
     //this.holdList.mojo.focusItem(this.holdListModel.items[this.holdListModel.items.length-1]);
-    this.holdListSave();
+    //this.holdListSave();
   }
   else {
     Mojo.Log.error(payload.errorText);
@@ -314,8 +341,10 @@ SettingsAssistant.prototype.holdListAdd = function(event) {
     return;
 
   service.installAction(this.holdListFinishAdd, 'hold', this.actions[0]);
+  service.stickSettings(this.callback);
 };
 
+/*
 SettingsAssistant.prototype.tapListFinishChange = function(payload)
 {
   if (payload.returnValue)
@@ -323,13 +352,16 @@ SettingsAssistant.prototype.tapListFinishChange = function(payload)
   else
     Mojo.Log.error(payload.errorText);
 }
+*/
 
 SettingsAssistant.prototype.tapListChange = function(event)
 {
   var index = event.model.index;
 
-  if (event.property === 'value')
-    service.changeAction(this.tapListFinishChange, 'tap', index, this.actions[event.value]);
+  if (event.property === 'value') {
+    service.changeAction(this.callback, 'tap', index, this.actions[event.value]);
+    service.stickSettings(this.callback);
+  }
 }
 
 SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
@@ -339,7 +371,7 @@ SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
     this.tapListCount--;
     if (!this.tapListCount)
       this.tapTimeGroup.hide();
-	  this.tapListSave();
+	  //this.tapListSave();
   }
   else {
     Mojo.Log.error(payload.errorText);
@@ -349,9 +381,11 @@ SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
 SettingsAssistant.prototype.tapListDelete = function(event)
 {
   service.removeAction(this.tapListFinishDelete.bind(this,event.item.id,event.index), 'tap', event.index);
+  service.stickSettings(this.callback);
 }
 
 
+/*
 SettingsAssistant.prototype.tapListSave = function()
 {
   return;
@@ -392,6 +426,7 @@ SettingsAssistant.prototype.tapListSave = function()
 	this.cookie.put(this.prefs);
 	//this.validateIdentity();
 }
+*/
 
 SettingsAssistant.prototype.tapListBuildList = function() {
   this.tapListModel.items = [];
@@ -426,6 +461,7 @@ SettingsAssistant.prototype.tapListAdd = function(event) {
     return;
 
   service.installAction(this.tapListFinishAdd, 'tap', this.actions[0]);
+  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.showError = function(message, callback) {
@@ -473,15 +509,20 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
     this.callback(payload);
     this.showError("Service does not seem to be running, try rebooting and then re-install if unsuccessful", this.close.bind(this));
   }
-  else if (payload.k_fd < 0) {
+  else if (payload.enabled && payload.k_fd < 0) {
     this.showError("Service reports keypad device cannot be opened, unfortunately NO functionality will work", this.close.bind(this));
   }
-  else if (payload.u_fd < 0) {
+  else if (payload.enabled && payload.u_fd < 0) {
     this.showError("Service reports uinput device cannot be opened.  The uinput module is required for KeyCaps functionality and keyboard emulation.  If you would like to use these functionalities, please make sure either the Uinput module is installed via Preware if using the stock Palm kernel or that you are running a custom kernel with uinput support included.");
   }
   else {
     this.actions = payload.actions.clone();
     this.maxActions = payload.max_actions;
+
+    this.holdListCount = 0;
+    this.holdListData = [];
+    this.tapListCount = 0;
+    this.tapListData = [];
 
     if (payload.installed_hold && payload.installed_hold.length > 0) {
       for (var i = 0; i < payload.installed_hold.length; i++) {
@@ -516,6 +557,12 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
       this.freqModel.value = payload.hold_interval;
       this.controller.modelChanged(this.freqModel, this);
     }
+
+    if (payload.enabled != this.enableModel.value) {
+      this.enableModel.value = payload.enabled;
+      this.controller.modelChanged(this.enableModel, this);
+    }
+
     this.setupActionWidgets();
     this.loadingActions = false;
   }
@@ -545,10 +592,12 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
   this.controller.modelChanged(this.freqModel, this);
   service.setRepeatRate(this.callback, -1, -1, true);
   service.getRepeatRate(this.handleGet.bind(this));
+  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.ffChange = function(event) {
   service.setFF(this.ffSetCallback, event.value);
+  service.stickSettings(this.callback);
   /*
   if (event.value) {
     this.ffSlider.show();
@@ -567,10 +616,12 @@ SettingsAssistant.prototype.enableChange = function(event) {
 
 SettingsAssistant.prototype.holdTimeoutChange = function(event) {
   service.setHoldTimeout(this.callback, Math.floor(event.value));
+  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.tapTimeoutChange = function(event) {
   service.setTapTimeout(this.callback, Math.floor(event.value));
+  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.ffRateChange = function(event) {
@@ -579,10 +630,14 @@ SettingsAssistant.prototype.ffRateChange = function(event) {
 }
 
 SettingsAssistant.prototype.rateChange = function(event) {
-  if (event.target === this.freqSlider)
+  if (event.target === this.freqSlider) {
     service.setRepeatRate(this.callback, -1, Math.floor(event.value), false);
-  else if (event.target === this.delaySlider)
+    service.stickSettings(this.callback);
+  }
+  else if (event.target === this.delaySlider) {
     service.setRepeatRate(this.callback, Math.floor(event.value), -1, false);
+    service.stickSettings(this.callback);
+  }
 }
 
 SettingsAssistant.prototype.getRandomSubTitle = function()

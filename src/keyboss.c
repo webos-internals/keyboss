@@ -12,7 +12,7 @@
 #include "keyboss.h"
 
 char keypad_device[80] = "";
-static pthread_t pipe_id = 0;
+pthread_t pipe_id = 0;
 int u_fd = -1;
 int k_fd = -1;
 int current_delay = DEFAULT_DELAY;
@@ -239,7 +239,7 @@ void tap_timeout(union sigval sig) {
 int change_hold_action(int index, ACTIONS action) {
   struct key_modifier *hold = &keystate.hold;
 
-  if (index < 0 || index >= hold->num_active)
+  if (index < 0 || index >= hold->num_active || !IS_VALID_ACTION(action))
    return -1;
 
  hold->actions[index] = action; 
@@ -279,7 +279,7 @@ int remove_hold_action(ACTIONS action, int index) {
 int install_hold_action(ACTIONS action) {
   struct key_modifier *hold = &keystate.hold;
 
-  if (hold->num_active >= MAX_ACTIONS)
+  if (hold->num_active >= MAX_ACTIONS || !IS_VALID_ACTION(action))
     return -1;
 
   hold->actions[hold->num_active++] = action;
@@ -293,7 +293,7 @@ int install_hold_action(ACTIONS action) {
 int change_tap_action(int index, ACTIONS action) {
   struct key_modifier *tap = &keystate.tap;
 
-  if (index < 0 || index >= tap->num_active)
+  if (index < 0 || index >= tap->num_active || !IS_VALID_ACTION(action))
    return -1;
 
  tap->actions[index] = action; 
@@ -333,7 +333,7 @@ int remove_tap_action(ACTIONS action, int index) {
 int install_tap_action(ACTIONS action) {
   struct key_modifier *tap = &keystate.tap;
 
-  if (tap->num_active >= MAX_ACTIONS)
+  if (tap->num_active >= MAX_ACTIONS || !IS_VALID_ACTION(action))
     return -1;
 
   tap->actions[tap->num_active++] = action;
@@ -346,6 +346,9 @@ int install_tap_action(ACTIONS action) {
 
 // set timeout in ms
 int set_tap_timeout_ms(int ms) {
+  if (ms < 0 || ms > 2000)
+    return -1;
+
   keystate.tap.threshold = ms;
 
   tap_timer.value.it_value.tv_sec = ms / 1000;
@@ -353,6 +356,9 @@ int set_tap_timeout_ms(int ms) {
 }
 
 int set_hold_timeout_ms(int ms) {
+  if (ms < 0 || ms > 2000)
+    return -1;
+
   keystate.hold.threshold = ms;
 
   hold_timer.value.it_value.tv_sec = ms / 1000;
@@ -489,7 +495,6 @@ static void *pipe_keys(void *ptr) {
     goto err;
   }
 
-  //restart_hidd(); 
   strcpy(device.name, "WebOS Internals KeyBoss");
 
   /* FIXME: any of this matter? */ 
@@ -530,9 +535,7 @@ static void *pipe_keys(void *ptr) {
             fprintf(stderr, "error setrelbit %d\n", i);
 #endif
 
-  system("/sbin/stop hidd");
   ret = ioctl(u_fd, UI_DEV_CREATE);
-  system("/sbin/start hidd");
   if (ret < 0)
     goto err;
 
@@ -580,6 +583,34 @@ int set_repeat(__s32 delay, __s32 period) {
   return 0;
 }
 
+int set_fffilter(bool enable) {
+  FILE *fd;
+
+  fd = fopen(PROX_TIMEOUT, "w");
+  if (!fd)
+    return -1;
+
+  fprintf(fd, "%d", (enable) ? 1 : 0);
+  fclose(fd);
+
+  return 0;
+}
+
+void reset_to_defaults() {
+  memset(&keystate, 0, sizeof(KEYSTATE));
+
+  tap_timer.value.it_value.tv_sec = 0;
+  tap_timer.value.it_value.tv_nsec = DEFAULT_TAP_TIMEOUT * 1000000;
+
+  hold_timer.value.it_value.tv_sec = 0;
+  hold_timer.value.it_value.tv_nsec = DEFAULT_HOLD_TIMEOUT * 1000000;
+
+  keystate.tap.threshold = DEFAULT_TAP_TIMEOUT;
+  keystate.hold.threshold = DEFAULT_HOLD_TIMEOUT;
+
+  set_fffilter(true);
+}
+
 int send_key(__u16 code, __s32 value) {
   __s32 rel_val = 0;
 
@@ -592,10 +623,8 @@ int send_key(__u16 code, __s32 value) {
 void cleanup(int sig) {
   syslog(LOG_DEBUG, "cleanup (sig %d)", sig);
   syslog(LOG_NOTICE, "cleanup (sig %d)", sig);
-  system("/sbin/stop hidd");
   pthread_cancel(pipe_id);
   set_repeat(DEFAULT_DELAY, DEFAULT_PERIOD);
-  system("/sbin/start hidd");
   syslog(LOG_NOTICE, "done cleanup");
   exit(0);
 }
@@ -621,6 +650,11 @@ int stop_pipe_thread() {
 }
 
 int main(int argc, char *argv[]) {
+  char c;
+  int arg;
+  int arg2;
+  bool enable = false;
+
 	signal(SIGINT, cleanup);
 	signal(SIGTERM, cleanup);
 	signal(SIGQUIT, cleanup);
@@ -628,7 +662,44 @@ int main(int argc, char *argv[]) {
 	signal(SIGKILL, cleanup);
 
   initialize();
-  start_pipe_thread();
+
+  while ((c = getopt(argc, argv, "h:t:H:T:r:fe")) != (char)-1) {
+    switch(c) {
+      case 'h':
+        sscanf(optarg, "%d", &arg);
+        syslog(LOG_DEBUG, "install hold %d\n", arg);
+        install_hold_action(arg);
+        break;
+      case 't':
+        sscanf(optarg, "%d", &arg);
+        install_tap_action(arg);
+        break;
+      case 'H':
+        sscanf(optarg, "%d", &arg);
+        set_hold_timeout_ms(arg);
+        break;
+      case 'T':
+        sscanf(optarg, "%d", &arg);
+        set_tap_timeout_ms(arg);
+        break;
+      case 'r':
+        if (optind >= argc || argv[optind][0] == '-')
+          return -1;
+        sscanf(optarg, "%d", &arg);
+        sscanf(argv[optind], "%d", &arg2);
+        set_repeat(arg, arg2);
+        break;
+      case 'f':
+        set_fffilter(false);
+        break;
+      case 'e':
+        enable = true;
+        break;
+    }
+  }
+
+  if (enable)
+    start_pipe_thread();
 
   if (luna_service_initialize(DBUS_ADDRESS))
     luna_service_start();

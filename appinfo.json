@@ -1,6 +1,6 @@
 {
   "id": "org.webosinternals.keyboss",
-  "version": "0.2.6",
+  "version": "0.2.9",
   "vendor": "WebOS Internals",
   "type": "web",
   "main": "index.html",
