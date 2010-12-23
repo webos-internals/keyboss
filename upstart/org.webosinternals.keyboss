@@ -17,7 +17,7 @@ script
   if [ "`/usr/bin/lunaprop -m com.palm.properties.prevBootPanicked`" = "false" ] && \
      [ "`/usr/bin/lunaprop -m com.palm.properties.prevShutdownClean`" = "true" ] && \
      [ "`/usr/bin/lunaprop -m -n com.palm.system last_umount_clean`" = "true" ]; then
-    enable="-e"
+    enable=" -e"
   fi
 
   exec /var/usr/sbin/org.webosinternals.keyboss `cat /var/preferences/org.webosinternals.keyboss/keyboss-args`$enable
