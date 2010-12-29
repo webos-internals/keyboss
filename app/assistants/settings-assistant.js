@@ -161,7 +161,6 @@ SettingsAssistant.prototype.setup = function() {
   Mojo.Event.listen(this.resetButton, Mojo.Event.tap, this.resetButtonTapped);
 
   service.getStatus(this.handleStatus.bind(this));
-  service.getFF(this.ffCallback.bind(this));
 };
 
 SettingsAssistant.prototype.tapHandler = function() {
@@ -492,19 +491,6 @@ SettingsAssistant.prototype.close = function() {
   window.close();
 }
 
-SettingsAssistant.prototype.ffCallback = function(payload) {
-  if (payload && payload.returnValue) {
-    if (payload.enable && !this.ffToggleModel.value) {
-      this.ffToggleModel.value = true;
-      this.controller.modelChanged(this.tapModel, this);
-    }
-    if (!payload.enable && this.ffToggleModel.value) {
-      this.ffToggleModel.value = false;
-      this.controller.modelChanged(this.tapModel, this);
-    }
-  }
-}
-
 SettingsAssistant.prototype.ffSetCallback = function(payload) {
   if (payload && !payload.returnValue) {
     this.showError("There was an error trying to set the fat finger filter, this is most likely due to an unsupported kernel");
@@ -578,7 +564,7 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
       this.controller.modelChanged(this.enableModel, this);
     }
 
-    if (payload.prox_timeout) {
+    if (payload.prox_timeout !== undefined) {
       this.ffToggleModel.value = payload.prox_timeout ? true : false;
       this.controller.modelChanged(this.ffToggleModel, this);
     }

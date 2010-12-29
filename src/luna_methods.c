@@ -85,7 +85,7 @@ bool getFF(LSHandle* lshandle, LSMessage *message, void *ctx) {
   }
 
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"enable\": %s", (threshold) ? "true" : "false");
+  sprintf(message_buf, "{\"returnValue\": true, \"enable\": %s}", (threshold) ? "true" : "false");
 
   LSMessageRespond(message, message_buf, &lserror);
 

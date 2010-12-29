@@ -3,3 +3,5 @@
 *   double space = period-space-capitalize
 
 * Fix Makefile 
+
+* FIX ME: Pixi hold is going through even after just tapping
