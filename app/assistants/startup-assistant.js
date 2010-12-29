@@ -9,6 +9,8 @@ function StartupAssistant()
     this.newMessages =
 	[
 		// Don't forget the comma on all but the last entry
+    { version: '0.3.0', log: [ 'Added Pixi support',
+                               'Fixed sticky settings getting mixed up' ]},
     { version: '0.2.9', log: [ 'Added fat finger filter control',
                                'Added persistent settings',
                                'Added ability to reset to defaults',
