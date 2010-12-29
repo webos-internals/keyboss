@@ -1,6 +1,5 @@
 * Use inotify to determine when uinput exists, rather than funky race condition upstart scripts
 * Explore more options than keycaps functionality
 *   double space = period-space-capitalize
-* Give Pixi some love
 
 * Fix Makefile 

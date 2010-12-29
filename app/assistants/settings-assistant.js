@@ -578,6 +578,11 @@ SettingsAssistant.prototype.handleStatus = function(payload) {
       this.controller.modelChanged(this.enableModel, this);
     }
 
+    if (payload.prox_timeout) {
+      this.ffToggleModel.value = payload.prox_timeout ? true : false;
+      this.controller.modelChanged(this.ffToggleModel, this);
+    }
+
     this.setupActionWidgets();
     this.loadingActions = false;
   }
