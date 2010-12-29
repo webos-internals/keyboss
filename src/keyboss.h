@@ -1,12 +1,15 @@
 #ifndef KEYBOSS_H
 #define KEYBOSS_H
 
+#include <unistd.h>
 #include <stdbool.h>
 #include <linux/input.h>
 
 #define DBUS_ADDRESS "org.webosinternals.keyboss"
 #define UINPUT_DEVICE "/dev/input/uinput"
-#define PROX_TIMEOUT "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout"
+#define PROX_TIMEOUT (!access(PROX_TIMEOUT_PRE, W_OK) ? PROX_TIMEOUT_PRE : PROX_TIMEOUT_PIXI)
+#define PROX_TIMEOUT_PRE "/sys/class/i2c-adapter/i2c-3/3-0038/prox_timeout"
+#define PROX_TIMEOUT_PIXI "/sys/class/input/input2/prox_timeout"
 #define ARGS_FILE "/var/preferences/org.webosinternals.keyboss/keyboss-args"
 
 /* FIXME: Get these macros from Palm patched input.h */
@@ -89,5 +92,6 @@ bool is_valid_code(int code);
 int send_key(__u16 code, __s32 value);
 int set_repeat(__s32 delay, __s32 period);
 int set_tap_timeout_ms(int ms);
+int set_fffilter(bool enable);
 
 #endif /* KEYBOSS_H */

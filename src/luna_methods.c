@@ -108,18 +108,13 @@ bool setFF(LSHandle* lshandle, LSMessage *message, void *ctx) {
 
   json_get_bool(object, "enable", &enable);
 
-  fd = fopen(PROX_TIMEOUT, "w");
-
-  if (!fd) {
+  if (set_fffilter(enable)) {
     LSMessageRespond(message, "{\"returnValue\": false, \"errorCode\": -1}", &lserror);
     return true;
   }
 
-  fprintf(fd, "%d", (enable) ? 1 : 0);
-  fclose(fd);
-
   memset(message_buf, 0, sizeof message_buf);
-  sprintf(message_buf, "{\"returnValue\": true, \"enable\": %s", (enable) ? "true" : "false");
+  sprintf(message_buf, "{\"returnValue\": true, \"enable\": %s}", (enable) ? "true" : "false");
 
   LSMessageRespond(message, message_buf, &lserror);
 
@@ -424,18 +419,19 @@ bool stickSettings(LSHandle* lshandle, LSMessage *message, void *ctx) {
     asprintf(&args, "%s -h %d", (args) ? args : "", hold->actions[i]);
 
   for (i=0; i<tap->num_active; i++)
-    asprintf(&args, "%s -h %d", (args) ? args : "", tap->actions[i]);
+    asprintf(&args, "%s -t %d", (args) ? args : "", tap->actions[i]);
 
   hold_timeout = hold_timer.value.it_value.tv_sec * 1000 + hold_timer.value.it_value.tv_nsec / 1000000;
   tap_timeout = tap_timer.value.it_value.tv_sec * 1000 + tap_timer.value.it_value.tv_nsec / 1000000;
 
-  asprintf(&args, "%s -H %d -T %d -r %d %d %s", 
+  asprintf(&args, "%s -H %d -T %d -r %d %d %s %s", 
       (args) ? args : "", 
       hold_timeout, 
       tap_timeout, 
       current_delay, 
       current_period, 
-      (ffDisable) ? "-f" : "");
+      (ffDisable) ? "-f" : "",
+      (pipe_id) ? "-e" : "");
 
   fd = fopen(ARGS_FILE, "w");
   if (!fd) {

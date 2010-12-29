@@ -587,6 +587,7 @@ int set_fffilter(bool enable) {
   FILE *fd;
 
   fd = fopen(PROX_TIMEOUT, "w");
+  syslog(LOG_DEBUG, "trying PROX_TIMEOUT %s\n", PROX_TIMEOUT);
   if (!fd)
     return -1;
 

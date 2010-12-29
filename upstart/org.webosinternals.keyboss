@@ -14,13 +14,13 @@ script
   fi
 
   # If it was a clean shutdown we can enable KeyBoss to take control of keypad device
-  if [ "`/usr/bin/lunaprop -m com.palm.properties.prevBootPanicked`" = "false" ] && \
-     [ "`/usr/bin/lunaprop -m com.palm.properties.prevShutdownClean`" = "true" ] && \
-     [ "`/usr/bin/lunaprop -m -n com.palm.system last_umount_clean`" = "true" ]; then
-    enable=" -e"
+  if [ "`/usr/bin/lunaprop -m com.palm.properties.prevBootPanicked`" = "true" ] || \
+     [ "`/usr/bin/lunaprop -m com.palm.properties.prevShutdownClean`" = "false" ] || \
+     [ "`/usr/bin/lunaprop -m -n com.palm.system last_umount_clean`" = "false" ]; then
+    sed -i 's/-e//' /var/preferences/org.webosinternals.keyboss/keyboss-args
   fi
 
-  exec /var/usr/sbin/org.webosinternals.keyboss `cat /var/preferences/org.webosinternals.keyboss/keyboss-args`$enable
+  exec /var/usr/sbin/org.webosinternals.keyboss `cat /var/preferences/org.webosinternals.keyboss/keyboss-args`
 
 end script
 

@@ -188,7 +188,6 @@ SettingsAssistant.prototype.resetButtonTapped = function(event) {
 SettingsAssistant.prototype.resetToDefaults = function(value) {
   if (value) {
     service.resetToDefaults(this.callback);
-    service.stickSettings(this.callback);
     service.getStatus(this.handleStatus.bind(this));
   }
 }
@@ -255,7 +254,6 @@ SettingsAssistant.prototype.holdListChange = function(event) {
 
   if (event.property === 'value') {
     service.changeAction(this.callback, 'hold', index, this.actions[event.value]);
-    service.stickSettings(this.callback);
   }
 }
 
@@ -267,6 +265,8 @@ SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
     if (!this.holdListCount)
       this.holdTimeGroup.hide();
 	  //this.holdListSave();
+
+    service.stickSettings();
   }
   else {
     Mojo.Log.error(payload.errorText);
@@ -276,7 +276,6 @@ SettingsAssistant.prototype.holdListFinishDelete = function(id, index, payload)
 SettingsAssistant.prototype.holdListDelete = function(event)
 {
   service.removeAction(this.holdListFinishDelete.bind(this,event.item.id,event.index), 'hold', event.index);
-  service.stickSettings(this.callback);
 }
 
 /*
@@ -344,6 +343,8 @@ SettingsAssistant.prototype.holdListFinishAdd = function(payload) {
     this.holdList.mojo.setLength(this.holdListModel.items.length);
     //this.holdList.mojo.focusItem(this.holdListModel.items[this.holdListModel.items.length-1]);
     //this.holdListSave();
+    
+    service.stickSettings();
   }
   else {
     Mojo.Log.error(payload.errorText);
@@ -355,7 +356,6 @@ SettingsAssistant.prototype.holdListAdd = function(event) {
     return;
 
   service.installAction(this.holdListFinishAdd, 'hold', this.actions[0]);
-  service.stickSettings(this.callback);
 };
 
 /*
@@ -372,10 +372,8 @@ SettingsAssistant.prototype.tapListChange = function(event)
 {
   var index = event.model.index;
 
-  if (event.property === 'value') {
+  if (event.property === 'value')
     service.changeAction(this.callback, 'tap', index, this.actions[event.value]);
-    service.stickSettings(this.callback);
-  }
 }
 
 SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
@@ -386,6 +384,8 @@ SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
     if (!this.tapListCount)
       this.tapTimeGroup.hide();
 	  //this.tapListSave();
+
+    service.stickSettings();
   }
   else {
     Mojo.Log.error(payload.errorText);
@@ -395,7 +395,6 @@ SettingsAssistant.prototype.tapListFinishDelete = function(id, index, payload)
 SettingsAssistant.prototype.tapListDelete = function(event)
 {
   service.removeAction(this.tapListFinishDelete.bind(this,event.item.id,event.index), 'tap', event.index);
-  service.stickSettings(this.callback);
 }
 
 
@@ -464,6 +463,8 @@ SettingsAssistant.prototype.tapListFinishAdd = function(payload) {
     this.tapList.mojo.setLength(this.tapListModel.items.length);
     //this.tapList.mojo.focusItem(this.tapListModel.items[this.tapListModel.items.length-1]);
     this.tapListSave();
+
+    service.stickSettings();
   }
   else {
     Mojo.Log.error(payload.errorText);
@@ -475,7 +476,6 @@ SettingsAssistant.prototype.tapListAdd = function(event) {
     return;
 
   service.installAction(this.tapListFinishAdd, 'tap', this.actions[0]);
-  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.showError = function(message, callback) {
@@ -511,6 +511,7 @@ SettingsAssistant.prototype.ffSetCallback = function(payload) {
     this.ffToggleModel.value = !this.ffToggleModel.value;
     this.controller.modelChanged(this.ffToggleModel, this);
   }
+  service.stickSettings();
 }
 
 SettingsAssistant.prototype.handleStatus = function(payload) {
@@ -586,6 +587,7 @@ SettingsAssistant.prototype.callback = function(payload) {
   for (p in payload) {
     Mojo.Log.info(p + ": " + payload[p]);
   }
+  service.stickSettings();
 }
 
 SettingsAssistant.prototype.handleGet = function(payload) {
@@ -606,12 +608,10 @@ SettingsAssistant.prototype.setRateDefault = function(event) {
   this.controller.modelChanged(this.freqModel, this);
   service.setRepeatRate(this.callback, -1, -1, true);
   service.getRepeatRate(this.handleGet.bind(this));
-  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.ffChange = function(event) {
   service.setFF(this.ffSetCallback, event.value);
-  service.stickSettings(this.callback);
   /*
   if (event.value) {
     this.ffSlider.show();
@@ -630,12 +630,10 @@ SettingsAssistant.prototype.enableChange = function(event) {
 
 SettingsAssistant.prototype.holdTimeoutChange = function(event) {
   service.setHoldTimeout(this.callback, Math.floor(event.value));
-  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.tapTimeoutChange = function(event) {
   service.setTapTimeout(this.callback, Math.floor(event.value));
-  service.stickSettings(this.callback);
 }
 
 SettingsAssistant.prototype.ffRateChange = function(event) {
@@ -646,11 +644,9 @@ SettingsAssistant.prototype.ffRateChange = function(event) {
 SettingsAssistant.prototype.rateChange = function(event) {
   if (event.target === this.freqSlider) {
     service.setRepeatRate(this.callback, -1, Math.floor(event.value), false);
-    service.stickSettings(this.callback);
   }
   else if (event.target === this.delaySlider) {
     service.setRepeatRate(this.callback, Math.floor(event.value), -1, false);
-    service.stickSettings(this.callback);
   }
 }
 
